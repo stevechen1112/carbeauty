@@ -1,208 +1,157 @@
 import { createRouter, createWebHistory } from 'vue-router';
-import { isAuthenticated, isAdmin } from './services/auth';
+import { getCurrentUser, isAdmin } from './services/auth';
 
-// 使用動態導入實現代碼分割
+// 主頁面
 const Home = () => import('./pages/Home.vue');
-const Providers = () => import('./pages/Providers.vue');
-const ProviderDetail = () => import('./pages/ProviderDetail.vue');
 const Login = () => import('./pages/Login.vue');
 const Register = () => import('./pages/Register.vue');
+const Providers = () => import('./pages/Providers.vue');
+const ProviderDetail = () => import('./pages/ProviderDetail.vue');
+const NearbyShops = () => import('./pages/NearbyShops.vue');
+const Community = () => import('./pages/Community.vue');
 const MyAppointments = () => import('./pages/MyAppointments.vue');
 const UserProfile = () => import('./pages/UserProfile.vue');
-const Community = () => import('./pages/Community.vue');
-const NearbyShops = () => import('./pages/NearbyShops.vue');
-const ProviderShowcase = () => import('./pages/ProviderShowcase.vue');
-const PostDetail = () => import('./pages/PostDetail.vue');
-const AboutUs = () => import('./pages/AboutUs.vue');
-const Privacy = () => import('./pages/Privacy.vue');
-const Terms = () => import('./pages/Terms.vue');
+
+// 簡易404頁面組件
+const NotFound = {
+  template: `
+    <div style="text-align: center; padding: 50px;">
+      <h1 style="font-size: 72px; margin-bottom: 20px; color: #1976d2;">404</h1>
+      <h2 style="margin-bottom: 15px; color: #333;">頁面不存在</h2>
+      <p style="margin-bottom: 30px; color: #666;">您嘗試訪問的頁面不存在或已被移除</p>
+      <a href="/" style="display: inline-block; background-color: #1976d2; color: white; padding: 10px 20px; text-decoration: none; border-radius: 4px;">返回首頁</a>
+    </div>
+  `
+};
 
 // 管理員頁面
 const AdminLayout = () => import('./pages/admin/AdminLayout.vue');
 const AdminDashboard = () => import('./pages/admin/Dashboard.vue');
 const AdminUsers = () => import('./pages/admin/Users.vue');
+const AdminProviders = () => import('./pages/admin/Providers.vue');
 const AdminAppointments = () => import('./pages/admin/Appointments.vue');
 const AdminSEO = () => import('./pages/admin/SEO.vue');
 
-// 定義路由
+// 路由守衛 - 確保用戶已登入
+const requireAuth = (to, from, next) => {
+  const currentUser = getCurrentUser();
+  if (!currentUser) {
+    next({ path: '/login', query: { redirect: to.fullPath } });
+  } else {
+    next();
+  }
+};
+
+// 路由守衛 - 確保用戶是管理員
+const requireAdmin = (to, from, next) => {
+  const currentUser = getCurrentUser();
+  if (!currentUser) {
+    return next({ path: '/login', query: { redirect: to.fullPath } });
+  }
+  
+  if (!isAdmin()) {
+    console.error('用戶不是管理員，無權訪問管理員頁面');
+    return next('/');
+  }
+  
+  next();
+};
+
 const routes = [
-  { 
-    path: '/', 
-    component: Home, 
-    meta: { title: '首頁 - 汽車美容預約平台' } 
-  },
-  { 
-    path: '/providers', 
-    component: Providers, 
-    meta: { title: '商家列表 - 汽車美容預約平台' } 
-  },
-  { 
-    path: '/providers/:id', 
-    component: ProviderDetail, 
-    meta: { title: '商家詳情 - 汽車美容預約平台' },
-    props: true  // 將路由參數作為組件的props傳入
+  {
+    path: '/',
+    name: 'Home',
+    component: Home
   },
   {
-    path: '/providers/:id/showcase',
-    component: ProviderShowcase,
-    meta: { title: '商家專業展示 - 汽車美容預約平台' },
-    props: true
-  },
-  { 
-    path: '/login', 
-    component: Login, 
-    meta: { title: '用戶登入 - 汽車美容預約平台', guest: true } 
-  },
-  { 
-    path: '/register', 
-    component: Register, 
-    meta: { title: '用戶註冊 - 汽車美容預約平台', guest: true } 
-  },
-  { 
-    path: '/appointments', 
-    component: MyAppointments, 
-    meta: { 
-      title: '我的預約 - 汽車美容預約平台',
-      requiresAuth: true 
-    } 
-  },
-  { 
-    path: '/profile', 
-    component: UserProfile, 
-    meta: { 
-      title: '會員專區 - 汽車美容預約平台',
-      requiresAuth: true 
-    } 
+    path: '/login',
+    name: 'Login',
+    component: Login
   },
   {
-    path: '/community',
-    component: Community,
-    meta: { title: '愛車社區 - 汽車美容預約平台' }
+    path: '/register',
+    name: 'Register',
+    component: Register
   },
   {
-    path: '/community/posts/:id',
-    component: PostDetail,
-    meta: { title: '帖子詳情 - 汽車美容預約平台' },
+    path: '/providers',
+    name: 'Providers',
+    component: Providers
+  },
+  {
+    path: '/providers/:id',
+    name: 'ProviderDetail',
+    component: ProviderDetail,
     props: true
   },
   {
     path: '/nearby',
-    component: NearbyShops,
-    meta: { title: '附近商家 - 汽車美容預約平台' }
+    name: 'NearbyShops',
+    component: NearbyShops
   },
   {
-    path: '/about',
-    component: AboutUs,
-    meta: { title: '關於我們 - 汽車美容預約平台' }
+    path: '/community',
+    name: 'Community',
+    component: Community
   },
   {
-    path: '/privacy',
-    component: Privacy,
-    meta: { title: '隱私政策 - 汽車美容預約平台' }
+    path: '/appointments',
+    name: 'MyAppointments',
+    component: MyAppointments,
+    beforeEnter: requireAuth
   },
   {
-    path: '/terms',
-    component: Terms,
-    meta: { title: '服務條款 - 汽車美容預約平台' }
+    path: '/profile',
+    name: 'UserProfile',
+    component: UserProfile,
+    beforeEnter: requireAuth
   },
-  // 管理員路由
   {
     path: '/admin',
     component: AdminLayout,
-    meta: { 
-      requiresAuth: true,
-      requiresAdmin: true
-    },
+    beforeEnter: requireAdmin,
     children: [
       {
         path: '',
-        redirect: '/admin/dashboard'
+        redirect: { name: 'AdminDashboard' }
       },
       {
         path: 'dashboard',
-        component: AdminDashboard,
-        meta: { 
-          title: '管理員儀表板 - 汽車美容預約平台',
-          requiresAuth: true,
-          requiresAdmin: true
-        }
+        name: 'AdminDashboard',
+        component: AdminDashboard
       },
       {
         path: 'users',
-        component: AdminUsers,
-        meta: { 
-          title: '用戶管理 - 汽車美容預約平台',
-          requiresAuth: true,
-          requiresAdmin: true
-        }
+        name: 'AdminUsers',
+        component: AdminUsers
+      },
+      {
+        path: 'providers',
+        name: 'AdminProviders',
+        component: AdminProviders
       },
       {
         path: 'appointments',
-        component: AdminAppointments,
-        meta: { 
-          title: '預約管理 - 汽車美容預約平台',
-          requiresAuth: true,
-          requiresAdmin: true
-        }
+        name: 'AdminAppointments',
+        component: AdminAppointments
       },
       {
         path: 'seo',
-        component: AdminSEO,
-        meta: { 
-          title: 'SEO 管理 - 汽車美容預約平台',
-          requiresAuth: true,
-          requiresAdmin: true
-        }
+        name: 'AdminSEO',
+        component: AdminSEO
       }
     ]
   },
-  // 404路由
-  { 
-    path: '/:pathMatch(.*)*', 
-    redirect: '/' 
+  {
+    path: '/:pathMatch(.*)*',
+    name: 'NotFound',
+    component: NotFound
   }
 ];
 
-// 創建路由
 const router = createRouter({
   history: createWebHistory(),
-  routes,
-  scrollBehavior(to, from, savedPosition) {
-    // 如果有保存的位置，則恢復到該位置
-    if (savedPosition) {
-      return savedPosition;
-    }
-    // 否則滾動到頂部
-    return { top: 0 };
-  }
-});
-
-// 全局前置守衛
-router.beforeEach((to, from, next) => {
-  // 更新頁面標題
-  document.title = to.meta.title || '汽車美容預約平台';
-  
-  // 處理需要管理員權限的路由
-  if (to.meta.requiresAdmin && !isAdmin()) {
-    next({ 
-      path: '/',
-      query: { message: 'unauthorized' }
-    });
-  }
-  // 處理需要登入的路由
-  else if (to.meta.requiresAuth && !isAuthenticated()) {
-    next({ 
-      path: '/login', 
-      query: { redirect: to.fullPath } 
-    });
-  } 
-  // 處理只有訪客才能訪問的路由
-  else if (to.meta.guest && isAuthenticated()) {
-    next('/');
-  }
-  else {
-    next();
-  }
+  routes
 });
 
 export default router; 
