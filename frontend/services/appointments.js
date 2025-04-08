@@ -1,112 +1,119 @@
 /**
- * 預約相關API服務
+ * 預約服務 - 處理預約相關的API請求
  */
-import { getAuthHeader } from './auth';
+import apiClient from './apiClient';
 
 /**
- * 獲取用戶預約列表
- * @returns {Promise<Array>} 預約列表
+ * 獲取當前用戶的預約列表
+ * @returns {Promise} 包含預約列表的Promise
  */
 export async function getUserAppointments() {
   try {
-    const response = await fetch('/api/appointments', {
-      headers: getAuthHeader()
-    });
-    
-    if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.message || '無法獲取預約列表');
-    }
-    
-    return await response.json();
+    return await apiClient.get('/appointments/user');
   } catch (error) {
-    console.error('獲取預約列表錯誤:', error);
+    console.error('獲取用戶預約失敗:', error);
+    throw error;
+  }
+}
+
+/**
+ * 獲取商家的預約列表
+ * @returns {Promise} 包含預約列表的Promise
+ */
+export async function getProviderAppointments() {
+  try {
+    return await apiClient.get('/appointments/provider');
+  } catch (error) {
+    console.error('獲取商家預約失敗:', error);
+    throw error;
+  }
+}
+
+/**
+ * 獲取特定預約詳情
+ * @param {number} appointmentId - 預約ID
+ * @returns {Promise} 包含預約詳情的Promise
+ */
+export async function getAppointmentDetails(appointmentId) {
+  try {
+    return await apiClient.get(`/appointments/${appointmentId}`);
+  } catch (error) {
+    console.error('獲取預約詳情失敗:', error);
     throw error;
   }
 }
 
 /**
  * 創建新預約
- * @param {Object} appointmentData - 預約數據
- * @param {number} appointmentData.provider_id - 服務商ID
- * @param {number} appointmentData.service_id - 服務ID
- * @param {string} appointmentData.date - 預約日期 (YYYY-MM-DD)
- * @param {string} appointmentData.time_slot - 預約時間段
- * @param {string} [appointmentData.notes] - 預約備註
- * @returns {Promise<Object>} 創建的預約
+ * @param {object} appointmentData - 預約數據
+ * @returns {Promise} 包含創建結果的Promise
  */
 export async function createAppointment(appointmentData) {
   try {
-    const response = await fetch('/api/appointments', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        ...getAuthHeader()
-      },
-      body: JSON.stringify(appointmentData)
-    });
-    
-    if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.message || '無法創建預約');
-    }
-    
-    return await response.json();
+    return await apiClient.post('/appointments', appointmentData);
   } catch (error) {
-    console.error('創建預約錯誤:', error);
+    console.error('創建預約失敗:', error);
     throw error;
   }
 }
 
 /**
  * 更新預約狀態
- * @param {number|string} appointmentId - 預約ID
- * @param {string} status - 新狀態 ('cancelled', 'confirmed', 'completed')
- * @returns {Promise<Object>} 更新後的預約
+ * @param {number} appointmentId - 預約ID
+ * @param {string} status - 新狀態
+ * @returns {Promise} 包含更新結果的Promise
  */
 export async function updateAppointmentStatus(appointmentId, status) {
   try {
-    const response = await fetch(`/api/appointments/${appointmentId}`, {
-      method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json',
-        ...getAuthHeader()
-      },
-      body: JSON.stringify({ status })
-    });
-    
-    if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.message || '無法更新預約狀態');
-    }
-    
-    return await response.json();
+    return await apiClient.put(`/appointments/${appointmentId}/status`, { status });
   } catch (error) {
-    console.error(`更新預約 ID:${appointmentId} 狀態錯誤:`, error);
+    console.error('更新預約狀態失敗:', error);
+    throw error;
+  }
+}
+
+/**
+ * 更新預約數據
+ * @param {number} appointmentId - 預約ID
+ * @param {object} appointmentData - 更新的預約數據
+ * @returns {Promise} 包含更新結果的Promise
+ */
+export async function updateAppointment(appointmentId, appointmentData) {
+  try {
+    return await apiClient.put(`/appointments/${appointmentId}`, appointmentData);
+  } catch (error) {
+    console.error('更新預約失敗:', error);
     throw error;
   }
 }
 
 /**
  * 取消預約
- * @param {number|string} appointmentId - 預約ID
- * @returns {Promise<Object>} 取消結果
+ * @param {number} appointmentId - 預約ID
+ * @returns {Promise} 包含取消結果的Promise
  */
 export async function cancelAppointment(appointmentId) {
   try {
-    const response = await fetch(`/api/appointments/${appointmentId}`, {
-      method: 'DELETE',
-      headers: getAuthHeader()
-    });
-    
-    if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.message || '無法取消預約');
-    }
-    
-    return await response.json();
+    return await apiClient.delete(`/appointments/${appointmentId}`);
   } catch (error) {
-    console.error(`取消預約 ID:${appointmentId} 錯誤:`, error);
+    console.error('取消預約失敗:', error);
+    throw error;
+  }
+}
+
+/**
+ * 獲取可用的預約時間段
+ * @param {number} providerId - 服務提供商ID
+ * @param {string} date - 日期字符串 (YYYY-MM-DD)
+ * @returns {Promise} 包含可用時間段的Promise
+ */
+export async function getAvailableTimeSlots(providerId, date) {
+  try {
+    return await apiClient.get(`/appointments/available-slots`, {
+      params: { providerId, date }
+    });
+  } catch (error) {
+    console.error('獲取可用時間段失敗:', error);
     throw error;
   }
 } 

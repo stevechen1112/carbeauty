@@ -1,150 +1,154 @@
 /**
- * 服務商相關API服務
+ * 服務商服務 - 處理與服務提供商相關的API請求
  */
-import { getAuthHeader } from './auth';
+import apiClient from './apiClient';
 
 /**
- * 獲取服務商列表
- * @param {Object} params - 搜尋參數
- * @returns {Promise<Array>} 服務商列表
+ * 獲取所有服務商列表
+ * @param {object} params - 搜索參數
+ * @returns {Promise} 服務商列表
  */
-export async function getProviders(params = {}) {
+export async function getAllProviders(params = {}) {
   try {
-    const queryParams = new URLSearchParams();
-    
-    // 添加搜尋參數
-    if (params.search) queryParams.append('search', params.search);
-    
-    const url = `/api/providers${queryParams.toString() ? '?' + queryParams.toString() : ''}`;
-    const response = await fetch(url);
-    
-    if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.message || '無法獲取服務商列表');
-    }
-    
-    return await response.json();
+    return await apiClient.get('/providers', { params });
   } catch (error) {
-    console.error('獲取服務商列表錯誤:', error);
+    console.error('獲取服務商列表失敗:', error);
     throw error;
   }
 }
 
 /**
- * 獲取服務商詳情
- * @param {number|string} id - 服務商ID
- * @returns {Promise<Object>} 服務商詳情
+ * 根據ID獲取服務商詳情
+ * @param {number} providerId - 服務商ID
+ * @returns {Promise} 服務商詳情
  */
-export async function getProviderById(id) {
+export async function getProviderById(providerId) {
   try {
-    const response = await fetch(`/api/providers/${id}`);
-    
-    if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.message || '無法獲取服務商詳情');
-    }
-    
-    return await response.json();
+    return await apiClient.get(`/providers/${providerId}`);
   } catch (error) {
-    console.error(`獲取服務商 ID:${id} 詳情錯誤:`, error);
+    console.error(`獲取服務商ID:${providerId}失敗:`, error);
     throw error;
   }
 }
 
 /**
  * 獲取服務商的服務列表
- * @param {number|string} providerId - 服務商ID
- * @returns {Promise<Array>} 服務列表
+ * @param {number} providerId - 服務商ID
+ * @returns {Promise} 服務列表
  */
 export async function getProviderServices(providerId) {
   try {
-    const response = await fetch(`/api/providers/${providerId}/services`);
-    
-    if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.message || '無法獲取服務列表');
-    }
-    
-    return await response.json();
+    return await apiClient.get(`/providers/${providerId}/services`);
   } catch (error) {
-    console.error(`獲取服務商 ID:${providerId} 服務列表錯誤:`, error);
+    console.error(`獲取服務商ID:${providerId}的服務列表失敗:`, error);
     throw error;
   }
 }
 
 /**
- * 提交服務評價
- * @param {number|string} providerId - 服務商ID
- * @param {Object} reviewData - 評價數據
- * @param {number} reviewData.rating - 評分 (1-5)
- * @param {string} reviewData.comment - 評價內容
- * @returns {Promise<Object>} 評價結果
+ * 獲取服務商的評價列表
+ * @param {number} providerId - 服務商ID
+ * @returns {Promise} 評價列表
  */
-export async function submitReview(providerId, reviewData) {
+export async function getProviderReviews(providerId) {
   try {
-    const response = await fetch(`/api/providers/${providerId}/reviews`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        ...getAuthHeader()
-      },
-      body: JSON.stringify(reviewData)
-    });
-    
-    if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.message || '無法提交評價');
-    }
-    
-    return await response.json();
+    return await apiClient.get(`/providers/${providerId}/reviews`);
   } catch (error) {
-    console.error('提交評價錯誤:', error);
+    console.error(`獲取服務商ID:${providerId}的評價失敗:`, error);
     throw error;
   }
 }
 
 /**
- * 獲取用戶收藏的服務商
- * @returns {Promise<Array>} 收藏的服務商列表
+ * 獲取附近的服務商
+ * @param {number} latitude - 緯度
+ * @param {number} longitude - 經度
+ * @param {number} radius - 搜索半徑（公里）
+ * @returns {Promise} 附近服務商列表
  */
-export async function getFavoriteProviders() {
+export async function getNearbyProviders(latitude, longitude, radius = 5) {
   try {
-    const response = await fetch('/api/users/favorites', {
-      headers: getAuthHeader()
+    return await apiClient.get(`/providers/nearby`, { 
+      params: { latitude, longitude, radius } 
     });
-    
-    if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.message || '無法獲取收藏商家');
-    }
-    
-    return await response.json();
   } catch (error) {
-    console.error('獲取收藏商家錯誤:', error);
+    console.error('獲取附近服務商失敗:', error);
     throw error;
   }
 }
 
 /**
- * 移除收藏的服務商
- * @param {number|string} providerId - 服務商ID
- * @returns {Promise<Object>} 操作結果
+ * 提交對服務商的評價
+ * @param {number} providerId - 服務商ID
+ * @param {object} reviewData - 評價數據
+ * @returns {Promise} 評價結果
  */
-export async function removeFavoriteProvider(providerId) {
+export async function submitProviderReview(providerId, reviewData) {
   try {
-    const response = await fetch(`/api/users/favorites/${providerId}`, {
-      method: 'DELETE',
-      headers: getAuthHeader()
-    });
-    
-    if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.message || '無法取消收藏');
-    }
-    
-    return await response.json();
+    return await apiClient.post(`/providers/${providerId}/reviews`, reviewData);
   } catch (error) {
-    console.error('取消收藏錯誤:', error);
+    console.error(`提交對服務商ID:${providerId}的評價失敗:`, error);
+    throw error;
+  }
+}
+
+/**
+ * 更新服務商資料（僅適用於商家登入）
+ * @param {number} providerId - 服務商ID
+ * @param {object} providerData - 更新數據
+ * @returns {Promise} 更新結果
+ */
+export async function updateProviderProfile(providerId, providerData) {
+  try {
+    return await apiClient.put(`/providers/${providerId}`, providerData);
+  } catch (error) {
+    console.error(`更新服務商ID:${providerId}資料失敗:`, error);
+    throw error;
+  }
+}
+
+/**
+ * 添加服務（僅適用於商家登入）
+ * @param {number} providerId - 服務商ID
+ * @param {object} serviceData - 服務數據
+ * @returns {Promise} 結果
+ */
+export async function addProviderService(providerId, serviceData) {
+  try {
+    return await apiClient.post(`/providers/${providerId}/services`, serviceData);
+  } catch (error) {
+    console.error(`服務商ID:${providerId}添加服務失敗:`, error);
+    throw error;
+  }
+}
+
+/**
+ * 更新服務（僅適用於商家登入）
+ * @param {number} providerId - 服務商ID
+ * @param {number} serviceId - 服務ID
+ * @param {object} serviceData - 服務數據
+ * @returns {Promise} 結果
+ */
+export async function updateProviderService(providerId, serviceId, serviceData) {
+  try {
+    return await apiClient.put(`/providers/${providerId}/services/${serviceId}`, serviceData);
+  } catch (error) {
+    console.error(`服務商ID:${providerId}更新服務ID:${serviceId}失敗:`, error);
+    throw error;
+  }
+}
+
+/**
+ * 刪除服務（僅適用於商家登入）
+ * @param {number} providerId - 服務商ID
+ * @param {number} serviceId - 服務ID
+ * @returns {Promise} 結果
+ */
+export async function deleteProviderService(providerId, serviceId) {
+  try {
+    return await apiClient.delete(`/providers/${providerId}/services/${serviceId}`);
+  } catch (error) {
+    console.error(`服務商ID:${providerId}刪除服務ID:${serviceId}失敗:`, error);
     throw error;
   }
 } 

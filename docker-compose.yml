@@ -1,0 +1,35 @@
+version: '3'
+
+services:
+  backend:
+    build: ./backend
+    container_name: car-beauty-backend
+    ports:
+      - "3001:3001"
+    volumes:
+      - ./backend:/app
+      - /app/node_modules
+    environment:
+      - NODE_ENV=development
+      - JWT_SECRET=docker_secret_key_for_development
+    restart: unless-stopped
+    networks:
+      - car-beauty-network
+
+  frontend:
+    build: ./frontend
+    container_name: car-beauty-frontend
+    ports:
+      - "5173:5173"
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    restart: unless-stopped
+    depends_on:
+      - backend
+    networks:
+      - car-beauty-network
+
+networks:
+  car-beauty-network:
+    driver: bridge 

@@ -1,174 +1,257 @@
 <template>
-  <div class="provider-showcase">
-    <h1>商家專業展示</h1>
-    
-    <div v-if="loading">
-      <p class="loading">正在加載商家資料...</p>
+  <div class="min-h-screen bg-gray-50">
+    <!-- 頁面標題 -->
+    <div class="bg-white shadow-sm">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+        <h1 class="text-3xl font-bold text-gray-900">商家專業展示</h1>
+      </div>
     </div>
-    
-    <div v-else-if="error">
-      <p class="error">{{ error }}</p>
-      <button class="retry-btn" @click="loadProviderData">重試</button>
-    </div>
-    
-    <div v-else class="showcase-content">
-      <!-- 商家基本信息 -->
-      <div class="provider-header">
-        <div class="provider-logo">
-          <img :src="provider.logo" :alt="provider.name" />
-        </div>
-        <div class="provider-info">
-          <h2>{{ provider.name }}</h2>
-          <div class="provider-rating">
-            <span class="stars">{{ getStars(provider.rating) }}</span>
-            <span class="rating-value">{{ provider.rating }}</span>
-            <span class="review-count">({{ provider.reviewCount }} 評價)</span>
-          </div>
-          <p class="provider-address">{{ provider.address }}</p>
-          <p class="provider-hours">營業時間: {{ provider.businessHours }}</p>
-          <div class="provider-badges">
-            <span v-for="(badge, index) in provider.badges" :key="index" class="badge">
-              {{ badge }}
-            </span>
-          </div>
-        </div>
-        <div class="provider-actions">
-          <button class="book-btn" @click="bookService">立即預約</button>
-          <button class="favorite-btn" @click="toggleFavorite">
-            <span v-if="isFavorite">❤️ 已收藏</span>
-            <span v-else>🤍 收藏</span>
-          </button>
-        </div>
+
+    <!-- 主要內容 -->
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div v-if="loading" class="flex justify-center items-center py-12">
+        <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
       </div>
       
-      <!-- 專業技術展示區 -->
-      <div class="showcase-section">
-        <h3>專業技術與設備</h3>
-        
-        <div class="tabs">
-          <div 
-            class="tab" 
-            :class="{ active: currentTab === 'facilities' }"
-            @click="currentTab = 'facilities'"
-          >
-            環境設備
-          </div>
-          <div 
-            class="tab" 
-            :class="{ active: currentTab === 'technicians' }"
-            @click="currentTab = 'technicians'"
-          >
-            專業技師
-          </div>
-          <div 
-            class="tab" 
-            :class="{ active: currentTab === 'certificates' }"
-            @click="currentTab = 'certificates'"
-          >
-            認證資質
-          </div>
-        </div>
-        
-        <!-- 環境設備 -->
-        <div v-if="currentTab === 'facilities'" class="tab-content">
-          <div class="facility-gallery">
-            <div v-for="(image, index) in provider.facilities" :key="index" class="gallery-item">
-              <img :src="image.url" :alt="image.description" @click="viewImage(image.url)">
-              <p class="image-description">{{ image.description }}</p>
-            </div>
-          </div>
-        </div>
-        
-        <!-- 專業技師 -->
-        <div v-if="currentTab === 'technicians'" class="tab-content">
-          <div class="technicians-list">
-            <div v-for="tech in provider.technicians" :key="tech.id" class="technician-card">
-              <img :src="tech.photo" :alt="tech.name" class="technician-photo">
-              <div class="technician-info">
-                <h4>{{ tech.name }}</h4>
-                <p class="technician-title">{{ tech.title }}</p>
-                <p class="technician-experience">{{ tech.experience }}年經驗</p>
-                <ul class="technician-specialties">
-                  <li v-for="(specialty, index) in tech.specialties" :key="index">
-                    {{ specialty }}
-                  </li>
-                </ul>
-              </div>
-            </div>
-          </div>
-        </div>
-        
-        <!-- 認證資質 -->
-        <div v-if="currentTab === 'certificates'" class="tab-content">
-          <div class="certificates-grid">
-            <div v-for="(cert, index) in provider.certificates" :key="index" class="certificate-card">
-              <img :src="cert.image" :alt="cert.name" class="certificate-image">
-              <div class="certificate-details">
-                <h4>{{ cert.name }}</h4>
-                <p class="cert-issuer">發證機構: {{ cert.issuer }}</p>
-                <p class="cert-date">獲取日期: {{ cert.date }}</p>
-              </div>
-            </div>
-          </div>
-        </div>
+      <div v-else-if="error" class="text-center py-12">
+        <svg class="mx-auto h-12 w-12 text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+        </svg>
+        <h3 class="mt-2 text-lg font-medium text-gray-900">載入失敗</h3>
+        <p class="mt-1 text-sm text-gray-500">{{ error }}</p>
+        <button
+          @click="loadProviderData"
+          class="mt-4 inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-primary hover:bg-primary-dark focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary"
+        >
+          重試
+        </button>
       </div>
       
-      <!-- 服務流程展示 -->
-      <div class="showcase-section">
-        <h3>我們的服務流程</h3>
-        
-        <div class="service-process">
-          <div v-for="(step, index) in provider.serviceProcess" :key="index" class="process-step">
-            <div class="step-number">{{ index + 1 }}</div>
-            <div class="step-content">
-              <h4>{{ step.title }}</h4>
-              <p>{{ step.description }}</p>
-              <div v-if="step.image" class="step-image">
-                <img :src="step.image" :alt="step.title">
+      <div v-else class="space-y-8">
+        <!-- 商家基本信息 -->
+        <div class="bg-white rounded-lg shadow-sm overflow-hidden">
+          <div class="p-6">
+            <div class="flex flex-col md:flex-row md:items-start gap-6">
+              <div class="flex-shrink-0">
+                <img
+                  :src="provider.logo"
+                  :alt="provider.name"
+                  class="h-32 w-32 rounded-lg object-cover"
+                />
+              </div>
+              <div class="flex-1">
+                <div class="flex items-start justify-between">
+                  <div>
+                    <h2 class="text-2xl font-bold text-gray-900">{{ provider.name }}</h2>
+                    <div class="mt-2 flex items-center">
+                      <div class="flex items-center">
+                        <span class="text-yellow-400">⭐</span>
+                        <span class="ml-2 text-lg font-medium text-gray-900">{{ provider.rating }}</span>
+                        <span class="ml-2 text-sm text-gray-500">({{ provider.reviewCount }} 評價)</span>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="flex space-x-3">
+                    <button
+                      @click="bookService"
+                      class="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-primary hover:bg-primary-dark focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary"
+                    >
+                      立即預約
+                    </button>
+                    <button
+                      @click="toggleFavorite"
+                      class="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary"
+                    >
+                      <span v-if="isFavorite" class="text-red-500">❤️ 已收藏</span>
+                      <span v-else>🤍 收藏</span>
+                    </button>
+                  </div>
+                </div>
+                
+                <div class="mt-4 space-y-2">
+                  <p class="text-gray-600">{{ provider.address }}</p>
+                  <p class="text-gray-600">營業時間: {{ provider.businessHours }}</p>
+                  <div class="flex flex-wrap gap-2">
+                    <span
+                      v-for="badge in provider.badges"
+                      :key="badge"
+                      class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-primary-light text-primary"
+                    >
+                      {{ badge }}
+                    </span>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
         </div>
-      </div>
-      
-      <!-- 案例展示 -->
-      <div class="showcase-section">
-        <h3>服務案例展示</h3>
-        
-        <div class="case-filters">
-          <button 
-            v-for="filter in caseFilters" 
-            :key="filter.value"
-            :class="{ active: currentCaseFilter === filter.value }"
-            @click="currentCaseFilter = filter.value"
-            class="filter-btn"
-          >
-            {{ filter.label }}
-          </button>
-        </div>
-        
-        <div class="case-gallery">
-          <div 
-            v-for="caseItem in filteredCases" 
-            :key="caseItem.id" 
-            class="case-item"
-            @click="viewCaseDetails(caseItem)"
-          >
-            <div class="case-images">
-              <div class="case-before">
-                <img :src="caseItem.beforeImage" alt="處理前">
-                <span class="image-label">處理前</span>
-              </div>
-              <div class="arrow">→</div>
-              <div class="case-after">
-                <img :src="caseItem.afterImage" alt="處理後">
-                <span class="image-label">處理後</span>
+
+        <!-- 專業技術展示區 -->
+        <div class="bg-white rounded-lg shadow-sm overflow-hidden">
+          <div class="p-6">
+            <h3 class="text-xl font-semibold text-gray-900 mb-4">專業技術與設備</h3>
+            
+            <div class="border-b border-gray-200">
+              <nav class="-mb-px flex space-x-8">
+                <button
+                  v-for="tab in ['facilities', 'technicians', 'certificates']"
+                  :key="tab"
+                  @click="currentTab = tab"
+                  :class="[
+                    currentTab === tab
+                      ? 'border-primary text-primary'
+                      : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300',
+                    'whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm'
+                  ]"
+                >
+                  {{ tab === 'facilities' ? '環境設備' : tab === 'technicians' ? '專業技師' : '認證資質' }}
+                </button>
+              </nav>
+            </div>
+            
+            <!-- 環境設備 -->
+            <div v-if="currentTab === 'facilities'" class="mt-6">
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                <div
+                  v-for="(image, index) in provider.facilities"
+                  :key="index"
+                  class="group relative rounded-lg overflow-hidden cursor-pointer"
+                  @click="viewImage(image.url)"
+                >
+                  <img
+                    :src="image.url"
+                    :alt="image.description"
+                    class="w-full h-64 object-cover group-hover:opacity-75 transition-opacity duration-200"
+                  />
+                  <div class="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                    <div class="absolute bottom-0 left-0 right-0 p-4">
+                      <p class="text-white text-sm">{{ image.description }}</p>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
-            <div class="case-info">
-              <h4>{{ caseItem.title }}</h4>
-              <p class="case-car">車型: {{ caseItem.carModel }}</p>
-              <p class="case-service">服務: {{ caseItem.service }}</p>
+            
+            <!-- 專業技師 -->
+            <div v-else-if="currentTab === 'technicians'" class="mt-6">
+              <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                <div
+                  v-for="(technician, index) in provider.technicians"
+                  :key="index"
+                  class="bg-gray-50 rounded-lg p-6"
+                >
+                  <div class="flex items-center">
+                    <img
+                      :src="technician.avatar"
+                      :alt="technician.name"
+                      class="h-16 w-16 rounded-full object-cover"
+                    />
+                    <div class="ml-4">
+                      <h4 class="text-lg font-medium text-gray-900">{{ technician.name }}</h4>
+                      <p class="text-sm text-gray-500">{{ technician.title }}</p>
+                    </div>
+                  </div>
+                  <p class="mt-4 text-gray-600">{{ technician.description }}</p>
+                </div>
+              </div>
+            </div>
+            
+            <!-- 認證資質 -->
+            <div v-else class="mt-6">
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                <div
+                  v-for="(cert, index) in provider.certificates"
+                  :key="index"
+                  class="bg-gray-50 rounded-lg p-6"
+                >
+                  <div class="flex items-center">
+                    <div class="flex-shrink-0">
+                      <svg class="h-12 w-12 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                      </svg>
+                    </div>
+                    <div class="ml-4">
+                      <h4 class="text-lg font-medium text-gray-900">{{ cert.name }}</h4>
+                      <p class="text-sm text-gray-500">{{ cert.issuer }}</p>
+                      <p class="mt-2 text-gray-600">{{ cert.description }}</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 服務流程 -->
+        <div class="bg-white rounded-lg shadow-sm overflow-hidden">
+          <div class="p-6">
+            <h3 class="text-xl font-semibold text-gray-900 mb-4">我們的服務流程</h3>
+            <div class="space-y-6">
+              <div
+                v-for="(step, index) in provider.serviceProcess"
+                :key="index"
+                class="flex items-start"
+              >
+                <div class="flex-shrink-0">
+                  <div class="flex items-center justify-center h-12 w-12 rounded-full bg-primary text-white font-bold">
+                    {{ index + 1 }}
+                  </div>
+                </div>
+                <div class="ml-4">
+                  <h4 class="text-lg font-medium text-gray-900">{{ step.title }}</h4>
+                  <p class="mt-2 text-gray-600">{{ step.description }}</p>
+                  <img
+                    v-if="step.image"
+                    :src="step.image"
+                    :alt="step.title"
+                    class="mt-4 rounded-lg shadow-sm"
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 案例展示 -->
+        <div class="bg-white rounded-lg shadow-sm overflow-hidden">
+          <div class="p-6">
+            <h3 class="text-xl font-semibold text-gray-900 mb-4">服務案例展示</h3>
+            
+            <div class="flex flex-wrap gap-2 mb-6">
+              <button
+                v-for="filter in caseFilters"
+                :key="filter.value"
+                @click="currentCaseFilter = filter.value"
+                :class="[
+                  currentCaseFilter === filter.value
+                    ? 'bg-primary text-white'
+                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200',
+                  'px-3 py-1 rounded-full text-sm font-medium'
+                ]"
+              >
+                {{ filter.label }}
+              </button>
+            </div>
+            
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+              <div
+                v-for="(caseItem, index) in filteredCases"
+                :key="index"
+                class="group relative rounded-lg overflow-hidden cursor-pointer"
+                @click="viewCase(caseItem)"
+              >
+                <img
+                  :src="caseItem.beforeImage"
+                  :alt="caseItem.title"
+                  class="w-full h-64 object-cover"
+                />
+                <div class="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                  <div class="absolute bottom-0 left-0 right-0 p-4">
+                    <h4 class="text-white font-medium">{{ caseItem.title }}</h4>
+                    <p class="text-white/80 text-sm mt-1">{{ caseItem.description }}</p>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -217,10 +300,8 @@ export default {
       this.error = null;
       
       try {
-        // 模擬API調用
         await new Promise(resolve => setTimeout(resolve, 1000));
         
-        // 模擬數據
         this.provider = {
           id: this.providerId || 1,
           name: '頂級汽車美容中心',
@@ -250,641 +331,104 @@ export default {
           ],
           technicians: [
             {
-              id: 1,
-              name: '張大師',
-              photo: 'https://via.placeholder.com/200x200?text=張大師',
-              title: '首席技術總監',
-              experience: 15,
-              specialties: ['頂級鍍膜', '原廠認證', '進口車護理']
+              name: '張師傅',
+              title: '資深技師',
+              avatar: 'https://via.placeholder.com/64x64?text=張',
+              description: '擁有15年汽車美容經驗，專精於車漆修復和鍍膜技術'
             },
             {
-              id: 2,
-              name: '李技師',
-              photo: 'https://via.placeholder.com/200x200?text=李技師',
-              title: '資深美容師',
-              experience: 8,
-              specialties: ['內飾深層清潔', '皮革護理', '除異味處理']
+              name: '李師傅',
+              title: '內裝專家',
+              avatar: 'https://via.placeholder.com/64x64?text=李',
+              description: '專注於內裝清潔和皮革保養，細心且專業'
             },
             {
-              id: 3,
               name: '王師傅',
-              photo: 'https://via.placeholder.com/200x200?text=王師傅',
-              title: '拋光專家',
-              experience: 10,
-              specialties: ['刮痕修復', '漆面拋光', '封體鍍膜']
+              title: '技術總監',
+              avatar: 'https://via.placeholder.com/64x64?text=王',
+              description: '負責技術培訓和品質把控，確保服務標準'
             }
           ],
           certificates: [
             {
-              name: '頂級美容技術認證',
-              image: 'https://via.placeholder.com/300x200?text=認證1',
-              issuer: '台灣汽車美容協會',
-              date: '2020-05-15'
+              name: '國際汽車美容協會認證',
+              issuer: 'IADA',
+              description: '通過國際汽車美容協會的專業認證，具備國際級服務水準'
             },
             {
-              name: '國際鍍膜大師認證',
-              image: 'https://via.placeholder.com/300x200?text=認證2',
-              issuer: '國際汽車護理協會',
-              date: '2019-08-22'
-            },
-            {
-              name: '環保清潔技術認證',
-              image: 'https://via.placeholder.com/300x200?text=認證3',
-              issuer: '環保署認可機構',
-              date: '2021-03-10'
+              name: '環保認證',
+              issuer: '環保署',
+              description: '使用環保清潔劑，符合環保標準'
             }
           ],
           serviceProcess: [
             {
-              title: '車況評估',
-              description: '專業技師全面檢查愛車狀況，提供最適合的護理方案。',
-              image: 'https://via.placeholder.com/400x200?text=評估'
+              title: '預約確認',
+              description: '確認預約時間和服務項目，準備所需材料和設備'
             },
             {
-              title: '前置清洗',
-              description: '使用專業設備及溫和清潔劑進行初步清洗，去除表面污漬。',
-              image: 'https://via.placeholder.com/400x200?text=清洗'
+              title: '車輛檢查',
+              description: '詳細檢查車輛狀況，記錄需要特別注意的部位'
             },
             {
-              title: '專業護理',
-              description: '根據不同部位及材質，使用專門的護理產品進行深度護理。',
-              image: 'https://via.placeholder.com/400x200?text=護理'
+              title: '專業施工',
+              description: '按照標準流程進行施工，確保每個步驟的品質'
             },
             {
-              title: '細節處理',
-              description: '對難以清潔的細節部位進行特殊處理，確保完美效果。',
-              image: 'https://via.placeholder.com/400x200?text=細節'
-            },
-            {
-              title: '品質檢驗',
-              description: '技師長進行最終檢查，確保每個環節達到最高標準。',
-              image: 'https://via.placeholder.com/400x200?text=檢驗'
+              title: '品質檢查',
+              description: '完成後進行全面檢查，確保服務品質'
             }
           ],
           cases: [
             {
-              id: 1,
-              title: 'Audi A6舊車翻新',
               type: 'exterior',
-              carModel: 'Audi A6 2018',
-              service: '全車拋光+頂級鍍膜',
-              beforeImage: 'https://via.placeholder.com/300x200?text=處理前',
-              afterImage: 'https://via.placeholder.com/300x200?text=處理後'
+              title: '車漆修復',
+              description: '修復車身刮痕，恢復原有光澤',
+              beforeImage: 'https://via.placeholder.com/600x400?text=修復前',
+              afterImage: 'https://via.placeholder.com/600x400?text=修復後'
             },
             {
-              id: 2,
-              title: 'BMW內飾深層清潔',
               type: 'interior',
-              carModel: 'BMW 5系列 2020',
-              service: '內飾深層清潔+皮革護理',
-              beforeImage: 'https://via.placeholder.com/300x200?text=處理前',
-              afterImage: 'https://via.placeholder.com/300x200?text=處理後'
+              title: '內裝深度清潔',
+              description: '徹底清潔內裝，去除異味',
+              beforeImage: 'https://via.placeholder.com/600x400?text=清潔前',
+              afterImage: 'https://via.placeholder.com/600x400?text=清潔後'
             },
             {
-              id: 3,
-              title: 'Benz鍍膜保護',
               type: 'coating',
-              carModel: 'Mercedes-Benz E-Class 2019',
-              service: '奈米陶瓷鍍膜',
-              beforeImage: 'https://via.placeholder.com/300x200?text=處理前',
-              afterImage: 'https://via.placeholder.com/300x200?text=處理後'
-            },
-            {
-              id: 4,
-              title: 'Tesla車身美容',
-              type: 'exterior',
-              carModel: 'Tesla Model 3 2021',
-              service: '漆面修復+拋光',
-              beforeImage: 'https://via.placeholder.com/300x200?text=處理前',
-              afterImage: 'https://via.placeholder.com/300x200?text=處理後'
+              title: '鍍膜護理',
+              description: '專業鍍膜，提供長期保護',
+              beforeImage: 'https://via.placeholder.com/600x400?text=鍍膜前',
+              afterImage: 'https://via.placeholder.com/600x400?text=鍍膜後'
             }
           ]
         };
         
-        // 模擬檢查收藏狀態
-        this.isFavorite = localStorage.getItem(`favorite_${this.providerId}`) === 'true';
+        this.loading = false;
       } catch (err) {
-        console.error('加載商家資料錯誤:', err);
-        this.error = '無法加載商家資料，請稍後再試';
-      } finally {
+        this.error = '載入商家資料失敗，請稍後再試';
         this.loading = false;
       }
     },
-    toggleFavorite() {
-      this.isFavorite = !this.isFavorite;
-      // 保存收藏狀態到localStorage
-      localStorage.setItem(`favorite_${this.providerId}`, this.isFavorite);
-      // 實際應用中應發送API請求
+    viewImage(url) {
+      // 這裡可以實現圖片預覽功能
+      console.log('查看圖片:', url);
+    },
+    viewCase(caseItem) {
+      // 這裡可以實現案例詳情查看功能
+      console.log('查看案例:', caseItem);
     },
     bookService() {
-      // 導航到預約頁面
-      this.$router.push(`/providers/${this.providerId}`);
+      this.$router.push(`/providers/${this.provider.id}/book`);
     },
-    viewImage(url) {
-      // 查看大圖
-      window.open(url, '_blank');
-    },
-    viewCaseDetails(caseItem) {
-      // 查看案例詳情
-      alert(`查看案例: ${caseItem.title}`);
-      // 實際應用中應打開案例詳情頁面或模態框
+    toggleFavorite() {
+      this.isFavorite = !this.isFavorite;
+      // 這裡可以實現收藏功能
     }
   },
   created() {
-    // 從路由參數中獲取商家ID
-    this.providerId = parseInt(this.$route.params.id) || 1;
+    this.providerId = this.$route.params.id;
     this.loadProviderData();
   }
 };
-</script>
-
-<style scoped>
-.provider-showcase {
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 2rem 0;
-}
-
-.provider-showcase h1 {
-  text-align: center;
-  margin-bottom: 2rem;
-  color: #1976d2;
-}
-
-.loading, .error {
-  text-align: center;
-  padding: 3rem;
-  color: #777;
-  font-size: 1.2rem;
-}
-
-.error {
-  color: #f44336;
-}
-
-.retry-btn {
-  display: block;
-  margin: 1rem auto;
-  padding: 0.75rem 1.5rem;
-  background: #f44336;
-  color: white;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
-  font-size: 1rem;
-}
-
-.provider-header {
-  display: flex;
-  align-items: center;
-  background: white;
-  border-radius: 8px;
-  padding: 2rem;
-  margin-bottom: 2rem;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-}
-
-.provider-logo {
-  flex-shrink: 0;
-  margin-right: 2rem;
-}
-
-.provider-logo img {
-  width: 120px;
-  height: 120px;
-  border-radius: 8px;
-  object-fit: cover;
-}
-
-.provider-info {
-  flex: 1;
-}
-
-.provider-info h2 {
-  margin: 0 0 0.5rem;
-  color: #333;
-}
-
-.provider-rating {
-  display: flex;
-  align-items: center;
-  margin-bottom: 0.5rem;
-}
-
-.stars {
-  color: #ff9800;
-  margin-right: 0.5rem;
-}
-
-.rating-value {
-  font-weight: bold;
-  margin-right: 0.25rem;
-}
-
-.review-count {
-  color: #777;
-  font-size: 0.9rem;
-}
-
-.provider-address, .provider-hours {
-  margin: 0.25rem 0;
-  color: #555;
-}
-
-.provider-badges {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem;
-  margin-top: 0.5rem;
-}
-
-.badge {
-  background: #e3f2fd;
-  color: #1976d2;
-  padding: 0.25rem 0.75rem;
-  border-radius: 20px;
-  font-size: 0.9rem;
-}
-
-.provider-actions {
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
-  margin-left: 2rem;
-}
-
-.book-btn, .favorite-btn {
-  padding: 0.75rem 1.5rem;
-  border-radius: 4px;
-  cursor: pointer;
-  border: none;
-  font-size: 1rem;
-  transition: all 0.3s;
-}
-
-.book-btn {
-  background: #4caf50;
-  color: white;
-}
-
-.book-btn:hover {
-  background: #388e3c;
-}
-
-.favorite-btn {
-  background: #f5f5f5;
-  color: #333;
-  border: 1px solid #ddd;
-}
-
-.favorite-btn:hover {
-  background: #e0e0e0;
-}
-
-.showcase-section {
-  background: white;
-  border-radius: 8px;
-  padding: 2rem;
-  margin-bottom: 2rem;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-}
-
-.showcase-section h3 {
-  margin-top: 0;
-  margin-bottom: 1.5rem;
-  color: #333;
-  padding-bottom: 0.75rem;
-  border-bottom: 1px solid #eee;
-}
-
-.tabs {
-  display: flex;
-  margin-bottom: 1.5rem;
-  border-bottom: 1px solid #e0e0e0;
-}
-
-.tab {
-  padding: 0.75rem 1.5rem;
-  cursor: pointer;
-  border-bottom: 3px solid transparent;
-  transition: all 0.3s;
-}
-
-.tab:hover {
-  color: #1976d2;
-}
-
-.tab.active {
-  color: #1976d2;
-  border-bottom-color: #1976d2;
-  font-weight: bold;
-}
-
-.tab-content {
-  min-height: 300px;
-}
-
-.facility-gallery {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-  gap: 1.5rem;
-}
-
-.gallery-item {
-  border-radius: 8px;
-  overflow: hidden;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-  transition: transform 0.3s;
-}
-
-.gallery-item:hover {
-  transform: translateY(-5px);
-}
-
-.gallery-item img {
-  width: 100%;
-  height: 200px;
-  object-fit: cover;
-  cursor: pointer;
-}
-
-.image-description {
-  padding: 1rem;
-  margin: 0;
-  background: #f5f7fa;
-  color: #555;
-}
-
-.technicians-list {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
-  gap: 1.5rem;
-}
-
-.technician-card {
-  display: flex;
-  background: #f5f7fa;
-  border-radius: 8px;
-  overflow: hidden;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-}
-
-.technician-photo {
-  width: 120px;
-  height: 150px;
-  object-fit: cover;
-}
-
-.technician-info {
-  flex: 1;
-  padding: 1rem;
-}
-
-.technician-info h4 {
-  margin: 0 0 0.5rem;
-  color: #333;
-}
-
-.technician-title {
-  color: #1976d2;
-  font-weight: bold;
-  margin: 0 0 0.5rem;
-}
-
-.technician-experience {
-  color: #555;
-  margin: 0 0 0.5rem;
-}
-
-.technician-specialties {
-  margin: 0.5rem 0 0;
-  padding-left: 1.5rem;
-  color: #666;
-}
-
-.certificates-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-  gap: 1.5rem;
-}
-
-.certificate-card {
-  background: white;
-  border: 1px solid #eee;
-  border-radius: 8px;
-  overflow: hidden;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-}
-
-.certificate-image {
-  width: 100%;
-  height: 150px;
-  object-fit: contain;
-  background: #f5f7fa;
-  padding: 1rem;
-}
-
-.certificate-details {
-  padding: 1rem;
-}
-
-.certificate-details h4 {
-  margin: 0 0 0.5rem;
-  color: #333;
-}
-
-.cert-issuer, .cert-date {
-  margin: 0.25rem 0;
-  color: #666;
-  font-size: 0.9rem;
-}
-
-.service-process {
-  position: relative;
-}
-
-.process-step {
-  display: flex;
-  margin-bottom: 2rem;
-  position: relative;
-}
-
-.process-step:not(:last-child)::after {
-  content: '';
-  position: absolute;
-  top: 2rem;
-  left: 1.5rem;
-  height: calc(100% + 1rem);
-  width: 2px;
-  background: #e0e0e0;
-  z-index: 0;
-}
-
-.step-number {
-  width: 3rem;
-  height: 3rem;
-  background: #1976d2;
-  color: white;
-  font-size: 1.2rem;
-  font-weight: bold;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 50%;
-  margin-right: 1.5rem;
-  flex-shrink: 0;
-  position: relative;
-  z-index: 1;
-}
-
-.step-content {
-  flex: 1;
-}
-
-.step-content h4 {
-  margin: 0 0 0.5rem;
-  color: #333;
-}
-
-.step-content p {
-  margin: 0 0 1rem;
-  color: #555;
-}
-
-.step-image {
-  margin-top: 1rem;
-  border-radius: 8px;
-  overflow: hidden;
-}
-
-.step-image img {
-  width: 100%;
-  max-width: 400px;
-  object-fit: cover;
-}
-
-.case-filters {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem;
-  margin-bottom: 1.5rem;
-}
-
-.filter-btn {
-  background: #f5f5f5;
-  border: 1px solid #ddd;
-  padding: 0.5rem 1rem;
-  border-radius: 20px;
-  cursor: pointer;
-  font-size: 0.9rem;
-  transition: all 0.3s;
-}
-
-.filter-btn:hover {
-  background: #e0e0e0;
-}
-
-.filter-btn.active {
-  background: #1976d2;
-  color: white;
-  border-color: #1976d2;
-}
-
-.case-gallery {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
-  gap: 2rem;
-}
-
-.case-item {
-  background: white;
-  border-radius: 8px;
-  overflow: hidden;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-  cursor: pointer;
-  transition: transform 0.3s;
-}
-
-.case-item:hover {
-  transform: translateY(-5px);
-}
-
-.case-images {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-  padding: 1rem;
-  background: #f5f7fa;
-}
-
-.case-before, .case-after {
-  flex: 1;
-  position: relative;
-}
-
-.case-before img, .case-after img {
-  width: 100%;
-  height: 150px;
-  object-fit: cover;
-  border-radius: 4px;
-}
-
-.arrow {
-  font-size: 1.5rem;
-  color: #777;
-}
-
-.image-label {
-  position: absolute;
-  top: 0.5rem;
-  left: 0.5rem;
-  background: rgba(0, 0, 0, 0.6);
-  color: white;
-  padding: 0.25rem 0.5rem;
-  border-radius: 4px;
-  font-size: 0.8rem;
-}
-
-.case-info {
-  padding: 1rem;
-}
-
-.case-info h4 {
-  margin: 0 0 0.5rem;
-  color: #333;
-}
-
-.case-car, .case-service {
-  margin: 0.25rem 0;
-  color: #555;
-  font-size: 0.9rem;
-}
-
-@media (max-width: 768px) {
-  .provider-header {
-    flex-direction: column;
-    text-align: center;
-  }
-  
-  .provider-logo {
-    margin: 0 0 1.5rem;
-  }
-  
-  .provider-actions {
-    margin: 1.5rem 0 0;
-    width: 100%;
-  }
-  
-  .technicians-list, .certificates-grid, .case-gallery {
-    grid-template-columns: 1fr;
-  }
-  
-  .case-images {
-    flex-direction: column;
-  }
-  
-  .arrow {
-    transform: rotate(90deg);
-  }
-}
-</style> 
+</script> 

@@ -2,6 +2,17 @@
   <div class="admin-seo">
     <h1>SEO 管理</h1>
     
+    <!-- 載入指示器 -->
+    <div v-if="loading" class="loading-container">
+      <div class="loading-spinner"></div>
+      <div>正在載入...</div>
+    </div>
+    
+    <!-- 錯誤消息 -->
+    <div v-if="error" class="error-message">
+      <p>{{ error }}</p>
+    </div>
+    
     <div class="seo-tabs">
       <div 
         class="tab" 
@@ -182,8 +193,8 @@
         <h3>網站地圖管理</h3>
         
         <div class="sitemap-controls">
-          <button class="action-btn" @click="generateSitemap">生成網站地圖</button>
-          <button class="action-btn" @click="submitSitemap">提交到搜尋引擎</button>
+          <button class="action-btn" @click="generateSitemap" :disabled="loading">生成網站地圖</button>
+          <button class="action-btn" @click="submitSitemap" :disabled="loading">提交到搜尋引擎</button>
         </div>
         
         <div class="sitemap-list">
@@ -207,6 +218,9 @@
                 <td>
                   <button class="small-btn edit-btn">編輯</button>
                 </td>
+              </tr>
+              <tr v-if="sitemapPages.length === 0">
+                <td colspan="5" class="no-data">暫無數據</td>
               </tr>
             </tbody>
           </table>
@@ -272,7 +286,18 @@
 </template>
 
 <script>
-import { ref, reactive, computed } from 'vue';
+import { ref, reactive, onMounted, watch } from 'vue';
+import apiClient from '../../services/apiClient.js';
+// 引入新的SEO服務
+import { 
+  getAllMetadata, 
+  updateMetadata, 
+  getSchemas, 
+  saveSchema as saveSchemaApi, 
+  getSitemap, 
+  generateSitemap as generateSitemapApi, 
+  submitSitemap as submitSitemapApi
+} from '../../services/seo.js';
 
 export default {
   name: 'AdminSEO',
@@ -299,32 +324,101 @@ export default {
       { path: '/contact', title: '聯絡我們' }
     ];
     
+    // 載入所有頁面元數據
+    const metadataCache = ref({});
+    const loading = ref(false);
+    const error = ref(null);
+    
+    const fetchAllMetadata = async () => {
+      try {
+        loading.value = true;
+        error.value = null;
+        
+        // 使用新的SEO服務
+        metadataCache.value = await getAllMetadata();
+        
+        loading.value = false;
+      } catch (err) {
+        console.error('獲取元數據錯誤:', err);
+        error.value = err.response?.data?.message || '獲取元數據失敗';
+        loading.value = false;
+      }
+    };
+    
+    // 獲取特定頁面的元數據
+    const fetchPageMetadata = async (path) => {
+      if (!path) return;
+      
+      try {
+        loading.value = true;
+        error.value = null;
+        
+        if (metadataCache.value[path]) {
+          // 從緩存中獲取數據
+          const data = metadataCache.value[path];
+          pageMetadata.title = data.title || '';
+          pageMetadata.description = data.description || '';
+          pageMetadata.keywords = data.keywords || '';
+          pageMetadata.ogImage = data.ogImage || '';
+        } else {
+          // 如果緩存中沒有，則重新獲取所有數據
+          await fetchAllMetadata();
+          if (metadataCache.value[path]) {
+            const data = metadataCache.value[path];
+            pageMetadata.title = data.title || '';
+            pageMetadata.description = data.description || '';
+            pageMetadata.keywords = data.keywords || '';
+            pageMetadata.ogImage = data.ogImage || '';
+          }
+        }
+        
+        loading.value = false;
+      } catch (err) {
+        console.error('獲取頁面元數據錯誤:', err);
+        error.value = err.response?.data?.message || '獲取頁面元數據失敗';
+        loading.value = false;
+      }
+    };
+    
     // 監聽選中頁面變化
-    const fetchPageMetadata = () => {
-      // 模擬API調用載入頁面元數據
-      // 實際實現中應該從後端API獲取數據
-      if (selectedPage.value === '/') {
-        pageMetadata.title = '汽車美容預約平台 - 專業洗車、打蠟、鍍膜服務預約';
-        pageMetadata.description = '汽車美容預約平台提供專業洗車、打蠟、鍍膜等服務預約，快速尋找附近優質商家，線上輕鬆預約，無需等待。';
-        pageMetadata.keywords = '汽車美容,預約平台,洗車服務,打蠟,鍍膜,汽車保養';
-        pageMetadata.ogImage = '/images/home-og.jpg';
-      } else if (selectedPage.value === '/providers') {
-        pageMetadata.title = '商家列表 - 尋找附近汽車美容服務商 | 汽車美容預約平台';
-        pageMetadata.description = '瀏覽所有合作的汽車美容服務商，查看詳細信息、服務項目和用戶評價，選擇最適合您的服務提供商。';
-        pageMetadata.keywords = '汽車美容商家,服務商列表,洗車店,附近商家,評價';
-        pageMetadata.ogImage = '/images/providers-og.jpg';
+    watch(selectedPage, (newPath) => {
+      if (newPath) {
+        fetchPageMetadata(newPath);
       } else {
         pageMetadata.title = '';
         pageMetadata.description = '';
         pageMetadata.keywords = '';
         pageMetadata.ogImage = '';
       }
-    };
+    });
     
     // 保存元數據
-    const saveMetadata = () => {
-      // 模擬API調用保存元數據
-      alert('元數據已儲存！');
+    const saveMetadata = async () => {
+      try {
+        loading.value = true;
+        error.value = null;
+        
+        // 使用新的SEO服務
+        const response = await updateMetadata(selectedPage.value, {
+          title: pageMetadata.title,
+          description: pageMetadata.description,
+          keywords: pageMetadata.keywords,
+          ogImage: pageMetadata.ogImage
+        });
+        
+        // 更新緩存
+        if (response.success) {
+          metadataCache.value[selectedPage.value] = { ...pageMetadata };
+          alert('元數據已成功儲存！');
+        }
+        
+        loading.value = false;
+      } catch (err) {
+        console.error('保存元數據錯誤:', err);
+        error.value = err.response?.data?.message || '保存元數據失敗';
+        loading.value = false;
+        alert('保存失敗: ' + error.value);
+      }
     };
     
     // 結構化數據管理
@@ -336,6 +430,25 @@ export default {
       telephone: '',
       openingHours: ''
     });
+    
+    const schemas = ref([]);
+    
+    // 獲取結構化數據
+    const fetchSchemas = async () => {
+      try {
+        loading.value = true;
+        error.value = null;
+        
+        // 使用新的SEO服務
+        schemas.value = await getSchemas();
+        
+        loading.value = false;
+      } catch (err) {
+        console.error('獲取結構化數據錯誤:', err);
+        error.value = err.response?.data?.message || '獲取結構化數據失敗';
+        loading.value = false;
+      }
+    };
     
     // 格式化結構化數據JSON
     const formatSchemaJson = () => {
@@ -358,45 +471,122 @@ export default {
     };
     
     // 保存結構化數據
-    const saveSchema = () => {
-      // 模擬API調用保存結構化數據
-      alert('結構化數據已儲存！');
+    const saveSchema = async () => {
+      try {
+        loading.value = true;
+        error.value = null;
+        
+        // 使用新的SEO服務
+        const response = await saveSchemaApi(selectedSchemaType.value, schemaData);
+        
+        if (response.success) {
+          // 刷新結構化數據列表
+          await fetchSchemas();
+          alert('結構化數據已成功儲存！');
+        }
+        
+        loading.value = false;
+      } catch (err) {
+        console.error('保存結構化數據錯誤:', err);
+        error.value = err.response?.data?.message || '保存結構化數據失敗';
+        loading.value = false;
+        alert('保存失敗: ' + error.value);
+      }
     };
     
     // 網站地圖管理
-    const sitemapPages = [
-      { url: 'https://example.com/', lastmod: '2023-04-01', changefreq: 'weekly', priority: '1.0' },
-      { url: 'https://example.com/providers', lastmod: '2023-04-02', changefreq: 'weekly', priority: '0.8' },
-      { url: 'https://example.com/about', lastmod: '2023-03-15', changefreq: 'monthly', priority: '0.5' },
-      { url: 'https://example.com/services', lastmod: '2023-03-20', changefreq: 'monthly', priority: '0.7' },
-      { url: 'https://example.com/contact', lastmod: '2023-03-10', changefreq: 'monthly', priority: '0.5' }
-    ];
+    const sitemapPages = ref([]);
+    
+    // 獲取網站地圖數據
+    const fetchSitemap = async () => {
+      try {
+        loading.value = true;
+        error.value = null;
+        
+        // 使用新的SEO服務
+        sitemapPages.value = await getSitemap();
+        
+        loading.value = false;
+      } catch (err) {
+        console.error('獲取網站地圖錯誤:', err);
+        error.value = err.response?.data?.message || '獲取網站地圖失敗';
+        loading.value = false;
+      }
+    };
     
     // 生成網站地圖
-    const generateSitemap = () => {
-      // 模擬API調用生成網站地圖
-      alert('網站地圖已生成！');
+    const generateSitemap = async () => {
+      try {
+        loading.value = true;
+        error.value = null;
+        
+        // 使用新的SEO服務
+        const response = await generateSitemapApi();
+        
+        if (response.success) {
+          alert('網站地圖已成功生成！');
+          await fetchSitemap();
+        }
+        
+        loading.value = false;
+      } catch (err) {
+        console.error('生成網站地圖錯誤:', err);
+        error.value = err.response?.data?.message || '生成網站地圖失敗';
+        loading.value = false;
+        alert('生成失敗: ' + error.value);
+      }
     };
     
     // 提交網站地圖到搜尋引擎
-    const submitSitemap = () => {
-      // 模擬API調用提交網站地圖
-      alert('網站地圖已提交到搜尋引擎！');
+    const submitSitemap = async () => {
+      try {
+        loading.value = true;
+        error.value = null;
+        
+        // 使用新的SEO服務
+        const response = await submitSitemapApi(['google', 'bing', 'yahoo']);
+        
+        if (response.success) {
+          alert(`網站地圖已成功提交到搜尋引擎: ${response.engines.join(', ')}`);
+        }
+        
+        loading.value = false;
+      } catch (err) {
+        console.error('提交網站地圖錯誤:', err);
+        error.value = err.response?.data?.message || '提交網站地圖失敗';
+        loading.value = false;
+        alert('提交失敗: ' + error.value);
+      }
     };
     
+    // 初始化加載數據
+    onMounted(async () => {
+      await fetchAllMetadata();
+      await fetchSchemas();
+      await fetchSitemap();
+    });
+    
+    // 確保所有必要的屬性都被返回
     return {
       activeTab,
       selectedPage,
       pageMetadata,
       pages,
-      saveMetadata,
       selectedSchemaType,
       schemaData,
+      schemas,
       formatSchemaJson,
+      saveMetadata,
       saveSchema,
       sitemapPages,
       generateSitemap,
-      submitSitemap
+      submitSitemap,
+      loading,
+      error,
+      metadataCache,
+      fetchAllMetadata,
+      fetchSchemas,
+      fetchSitemap
     };
   },
   watch: {
@@ -706,6 +896,44 @@ export default {
 .tip-content p {
   margin: 0;
   color: #666;
+}
+
+.loading-container {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(255, 255, 255, 0.8);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.loading-spinner {
+  border: 4px solid #f3f3f3;
+  border-top: 4px solid #1976d2;
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.error-message {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  background-color: #ffd7d7;
+  color: #c62828;
+  padding: 1rem;
+  z-index: 1000;
 }
 
 @media (max-width: 768px) {

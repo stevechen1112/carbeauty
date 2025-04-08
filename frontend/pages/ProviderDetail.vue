@@ -1,132 +1,197 @@
 <template>
-  <div class="provider-detail" v-if="provider">
-    <div class="provider-header">
-      <div class="provider-info">
-        <h1>{{ provider.name }}</h1>
-        <p class="address">📍 {{ provider.address }}</p>
-        <div class="rating">
-          <span>⭐ {{ provider.rating || '暫無評分' }}</span>
-          <span class="reviews">({{ provider.reviewCount || 0 }}條評價)</span>
-        </div>
-        <div class="contact">
-          <p>📞 {{ provider.phone }}</p>
-          <p>🕒 營業時間: {{ provider.businessHours }}</p>
-        </div>
-      </div>
-      <div class="provider-actions">
-        <button @click="viewShowcase" class="showcase-btn">
-          <span>👨‍🔧</span> 查看專業展示
-        </button>
-      </div>
-    </div>
-    
-    <div class="content-container">
-      <div class="main-content">
-        <div class="about-section">
-          <h2>關於我們</h2>
-          <p>{{ provider.description }}</p>
-        </div>
-        
-        <div class="services-section">
-          <h2>提供服務</h2>
-          <div class="services-list">
-            <div 
-              v-for="service in provider.servicesList" 
-              :key="service.id" 
-              class="service-card"
-            >
-              <div class="service-header">
-                <h3>{{ service.name }}</h3>
-                <span class="price">NT$ {{ service.price }}</span>
-              </div>
-              <p class="duration">⏱️ 服務時間: 約{{ service.duration }}分鐘</p>
-              <p class="description">{{ service.description }}</p>
-            </div>
-          </div>
-        </div>
-        
-        <div class="reviews-section">
-          <h2>用戶評價</h2>
-          <div v-if="provider.reviews && provider.reviews.length > 0" class="reviews-list">
-            <div v-for="(review, index) in provider.reviews" :key="index" class="review-card">
-              <div class="review-header">
-                <span class="reviewer-name">{{ review.userName }}</span>
-                <div class="review-rating">
-                  <span>⭐ {{ review.rating }}</span>
-                  <span class="review-date">{{ review.date }}</span>
+  <div class="min-h-screen bg-gray-50">
+    <!-- 服務商頭部信息 -->
+    <div class="bg-white shadow-sm">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div class="flex flex-col md:flex-row md:items-start gap-8">
+          <div class="flex-1">
+            <div class="flex items-start justify-between">
+              <div>
+                <h1 class="text-3xl font-bold text-gray-900">{{ provider.name }}</h1>
+                <div class="mt-2 flex items-center">
+                  <div class="flex items-center">
+                    <span class="text-yellow-400">⭐</span>
+                    <span class="ml-2 text-lg font-medium text-gray-900">{{ provider.rating || '暫無評分' }}</span>
+                    <span class="ml-2 text-sm text-gray-500">({{ provider.reviewCount || 0 }}條評價)</span>
+                  </div>
                 </div>
               </div>
-              <p class="review-text">{{ review.comment }}</p>
-            </div>
-          </div>
-          <p v-else class="no-reviews">還沒有評價，成為第一個評價的用戶吧！</p>
-        </div>
-      </div>
-      
-      <div class="booking-sidebar">
-        <div class="booking-card">
-          <h2>預約服務</h2>
-          <div class="booking-form">
-            <div class="form-group">
-              <label for="service">選擇服務</label>
-              <select id="service" v-model="selectedService">
-                <option value="">請選擇服務</option>
-                <option 
-                  v-for="service in provider.servicesList" 
-                  :key="service.id" 
-                  :value="service.id"
-                >
-                  {{ service.name }} - NT$ {{ service.price }}
-                </option>
-              </select>
+              <button
+                @click="viewShowcase"
+                class="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-primary hover:bg-primary-dark focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary"
+              >
+                <svg class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                </svg>
+                查看專業展示
+              </button>
             </div>
             
-            <div class="form-group">
-              <label for="date">選擇日期</label>
-              <input type="date" id="date" v-model="bookingDate" :min="minDate">
+            <div class="mt-6 space-y-4">
+              <div class="flex items-center text-gray-500">
+                <svg class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                </svg>
+                {{ provider.address }}
+              </div>
+              
+              <div class="flex items-center text-gray-500">
+                <svg class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
+                </svg>
+                {{ provider.phone }}
+              </div>
+              
+              <div class="flex items-center text-gray-500">
+                <svg class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                營業時間: {{ provider.businessHours }}
+              </div>
             </div>
-            
-            <div class="form-group">
-              <label for="time">選擇時間</label>
-              <select id="time" v-model="bookingTime" :disabled="!bookingDate">
-                <option value="">請選擇時間</option>
-                <option 
-                  v-for="time in availableTimes" 
-                  :key="time" 
-                  :value="time"
-                >{{ time }}</option>
-              </select>
-            </div>
-            
-            <div class="form-group">
-              <label for="notes">備註</label>
-              <textarea 
-                id="notes" 
-                v-model="bookingNotes" 
-                placeholder="如車型、特殊需求等"
-                rows="3"
-              ></textarea>
-            </div>
-            
-            <button 
-              @click="submitBooking" 
-              class="booking-btn" 
-              :disabled="!isFormValid || !isLoggedIn"
-            >
-              {{ isLoggedIn ? '確認預約' : '請先登入' }}
-            </button>
-            
-            <p v-if="!isLoggedIn" class="login-tip">
-              <router-link to="/login">登入</router-link> 後即可預約服務
-            </p>
           </div>
         </div>
       </div>
     </div>
-  </div>
-  
-  <div v-else class="loading">
-    載入中...
+
+    <!-- 主要內容區域 -->
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <!-- 左側內容 -->
+        <div class="lg:col-span-2 space-y-8">
+          <!-- 關於我們 -->
+          <div class="bg-white rounded-lg shadow-sm p-6">
+            <h2 class="text-xl font-semibold text-gray-900 mb-4">關於我們</h2>
+            <p class="text-gray-600 leading-relaxed">{{ provider.description }}</p>
+          </div>
+          
+          <!-- 服務列表 -->
+          <div class="bg-white rounded-lg shadow-sm p-6">
+            <h2 class="text-xl font-semibold text-gray-900 mb-4">提供服務</h2>
+            <div class="grid grid-cols-1 gap-4">
+              <div
+                v-for="service in provider.servicesList"
+                :key="service.id"
+                class="border border-gray-200 rounded-lg p-4 hover:border-primary transition-colors duration-200"
+              >
+                <div class="flex justify-between items-start">
+                  <div>
+                    <h3 class="text-lg font-medium text-gray-900">{{ service.name }}</h3>
+                    <p class="mt-1 text-sm text-gray-500">⏱️ 服務時間: 約{{ service.duration }}分鐘</p>
+                  </div>
+                  <span class="text-xl font-bold text-primary">NT$ {{ service.price }}</span>
+                </div>
+                <p class="mt-2 text-gray-600">{{ service.description }}</p>
+              </div>
+            </div>
+          </div>
+          
+          <!-- 用戶評價 -->
+          <div class="bg-white rounded-lg shadow-sm p-6">
+            <h2 class="text-xl font-semibold text-gray-900 mb-4">用戶評價</h2>
+            <div v-if="provider.reviews && provider.reviews.length > 0" class="space-y-4">
+              <div
+                v-for="(review, index) in provider.reviews"
+                :key="index"
+                class="border-b border-gray-200 pb-4 last:border-b-0 last:pb-0"
+              >
+                <div class="flex justify-between items-start">
+                  <div class="flex items-center">
+                    <span class="text-gray-900 font-medium">{{ review.userName }}</span>
+                    <div class="ml-2 flex items-center">
+                      <span class="text-yellow-400">⭐</span>
+                      <span class="ml-1 text-sm text-gray-500">{{ review.rating }}</span>
+                    </div>
+                  </div>
+                  <span class="text-sm text-gray-500">{{ review.date }}</span>
+                </div>
+                <p class="mt-2 text-gray-600">{{ review.comment }}</p>
+              </div>
+            </div>
+            <p v-else class="text-center text-gray-500 py-4">還沒有評價，成為第一個評價的用戶吧！</p>
+          </div>
+        </div>
+        
+        <!-- 右側預約表單 -->
+        <div class="lg:col-span-1">
+          <div class="bg-white rounded-lg shadow-sm p-6 sticky top-6">
+            <h2 class="text-xl font-semibold text-gray-900 mb-4">預約服務</h2>
+            <form @submit.prevent="submitBooking" class="space-y-4">
+              <div>
+                <label for="service" class="block text-sm font-medium text-gray-700">選擇服務</label>
+                <select
+                  id="service"
+                  v-model="selectedService"
+                  class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-primary focus:border-primary rounded-md"
+                >
+                  <option value="">請選擇服務</option>
+                  <option
+                    v-for="service in provider.servicesList"
+                    :key="service.id"
+                    :value="service.id"
+                  >
+                    {{ service.name }} - NT$ {{ service.price }}
+                  </option>
+                </select>
+              </div>
+              
+              <div>
+                <label for="date" class="block text-sm font-medium text-gray-700">選擇日期</label>
+                <input
+                  type="date"
+                  id="date"
+                  v-model="bookingDate"
+                  :min="minDate"
+                  class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-primary focus:border-primary rounded-md"
+                />
+              </div>
+              
+              <div>
+                <label for="time" class="block text-sm font-medium text-gray-700">選擇時間</label>
+                <select
+                  id="time"
+                  v-model="bookingTime"
+                  :disabled="!bookingDate"
+                  class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-primary focus:border-primary rounded-md"
+                >
+                  <option value="">請選擇時間</option>
+                  <option
+                    v-for="time in availableTimes"
+                    :key="time"
+                    :value="time"
+                  >{{ time }}</option>
+                </select>
+              </div>
+              
+              <div>
+                <label for="notes" class="block text-sm font-medium text-gray-700">備註</label>
+                <textarea
+                  id="notes"
+                  v-model="bookingNotes"
+                  rows="3"
+                  placeholder="如車型、特殊需求等"
+                  class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-primary focus:border-primary rounded-md"
+                ></textarea>
+              </div>
+              
+              <button
+                type="submit"
+                :disabled="!isFormValid || !isLoggedIn"
+                class="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-primary hover:bg-primary-dark focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {{ isLoggedIn ? '確認預約' : '請先登入' }}
+              </button>
+              
+              <p v-if="!isLoggedIn" class="text-center text-sm text-gray-500">
+                <router-link to="/login" class="text-primary hover:text-primary-dark">登入</router-link> 後即可預約服務
+              </p>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -158,7 +223,6 @@ export default {
   created() {
     this.fetchProviderDetails();
     
-    // 檢查用戶是否已登入
     const token = localStorage.getItem('token');
     this.isLoggedIn = !!token;
   },
@@ -166,8 +230,7 @@ export default {
     async fetchProviderDetails() {
       const providerId = this.$route.params.id;
       
-      // 在實際應用中，應該從API獲取數據
-      // 這裡使用模擬數據
+      // 模擬API調用
       setTimeout(() => {
         this.provider = {
           id: providerId,
@@ -212,337 +275,33 @@ export default {
             {
               userName: '王先生',
               rating: 5,
-              date: '2023-03-15',
-              comment: '服務非常專業，車子洗完亮如新車，會再次光顧！'
+              date: '2023-05-15',
+              comment: '服務非常專業，工作人員態度很好，車子洗得很乾淨，下次還會再來！'
             },
             {
-              userName: '林女士',
+              userName: '李小姐',
               rating: 4,
-              date: '2023-03-10',
-              comment: '工作細心，態度友善，服務品質值得推薦。'
-            },
-            {
-              userName: '張先生',
-              rating: 5,
-              date: '2023-03-05',
-              comment: '打蠟效果很好，車子保持亮麗很久，價格也合理。'
+              date: '2023-05-10',
+              comment: '整體服務不錯，但等待時間稍長，建議提前預約。'
             }
           ]
         };
       }, 500);
     },
-    async submitBooking() {
-      if (!this.isFormValid || !this.isLoggedIn) return;
-      
-      try {
-        // 在實際應用中，應該發送預約請求到API
-        const bookingData = {
-          providerId: this.provider.id,
-          serviceId: this.selectedService,
-          date: this.bookingDate,
-          timeSlot: this.bookingTime,
-          notes: this.bookingNotes
-        };
-        
-        // 模擬API請求
-        console.log('預約數據:', bookingData);
-        
-        // 模擬成功響應
-        alert('預約成功！');
-        
-        // 重置表單
-        this.selectedService = '';
-        this.bookingDate = '';
-        this.bookingTime = '';
-        this.bookingNotes = '';
-        
-        // 導航到預約列表頁面
-        // this.$router.push('/appointments');
-      } catch (error) {
-        alert('預約失敗，請稍後重試');
-        console.error('預約錯誤:', error);
-      }
-    },
     viewShowcase() {
-      // 導航到商家專業展示頁面
-      this.$router.push(`/providers/${this.$route.params.id}/showcase`);
+      this.$router.push(`/providers/${this.provider.id}/showcase`);
+    },
+    submitBooking() {
+      if (!this.isFormValid) return;
+      
+      // 這裡應該調用API提交預約
+      console.log('提交預約:', {
+        serviceId: this.selectedService,
+        date: this.bookingDate,
+        time: this.bookingTime,
+        notes: this.bookingNotes
+      });
     }
   }
 };
-</script>
-
-<style scoped>
-.provider-detail {
-  max-width: 1200px;
-  margin: 0 auto;
-}
-
-.provider-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  margin-bottom: 2rem;
-  background-color: white;
-  padding: 2rem;
-  border-radius: 10px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-}
-
-.provider-info h1 {
-  margin-top: 0;
-  margin-bottom: 0.5rem;
-  color: #1976d2;
-}
-
-.address {
-  color: #555;
-  margin-bottom: 0.5rem;
-}
-
-.rating {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  color: #f9a825;
-  font-weight: bold;
-  margin-bottom: 1rem;
-}
-
-.reviews {
-  color: #777;
-  font-weight: normal;
-}
-
-.contact {
-  color: #555;
-}
-
-.provider-actions {
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-}
-
-.showcase-btn {
-  background-color: #ff9800;
-  color: white;
-  border: none;
-  padding: 0.75rem 1.25rem;
-  border-radius: 4px;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  font-size: 1rem;
-  transition: background-color 0.3s;
-}
-
-.showcase-btn:hover {
-  background-color: #f57c00;
-}
-
-.content-container {
-  display: flex;
-  gap: 2rem;
-}
-
-.main-content {
-  flex: 1;
-}
-
-.about-section, .services-section, .reviews-section {
-  background-color: white;
-  padding: 2rem;
-  border-radius: 8px;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-  margin-bottom: 2rem;
-}
-
-.about-section h2, .services-section h2, .reviews-section h2 {
-  margin-top: 0;
-  margin-bottom: 1rem;
-  color: #333;
-}
-
-.services-list {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-  gap: 1rem;
-}
-
-.service-card {
-  border: 1px solid #eee;
-  border-radius: 8px;
-  padding: 1.5rem;
-  transition: transform 0.3s;
-}
-
-.service-card:hover {
-  transform: translateY(-5px);
-  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
-}
-
-.service-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 0.5rem;
-}
-
-.service-header h3 {
-  margin: 0;
-  color: #1976d2;
-}
-
-.price {
-  font-weight: bold;
-  color: #4caf50;
-}
-
-.duration {
-  color: #777;
-  margin-bottom: 0.5rem;
-}
-
-.reviews-list {
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-}
-
-.review-card {
-  border: 1px solid #eee;
-  border-radius: 8px;
-  padding: 1rem;
-}
-
-.review-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 0.5rem;
-}
-
-.reviewer-name {
-  font-weight: bold;
-}
-
-.review-rating {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-.review-date {
-  color: #777;
-  font-size: 0.9rem;
-}
-
-.no-reviews {
-  color: #777;
-  text-align: center;
-  padding: 1rem;
-}
-
-.booking-sidebar {
-  flex: 0 0 350px;
-}
-
-.booking-card {
-  background-color: white;
-  padding: 2rem;
-  border-radius: 8px;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-  position: sticky;
-  top: 20px;
-}
-
-.booking-card h2 {
-  margin-top: 0;
-  margin-bottom: 1.5rem;
-  color: #1976d2;
-  text-align: center;
-}
-
-.form-group {
-  margin-bottom: 1rem;
-}
-
-label {
-  display: block;
-  margin-bottom: 0.5rem;
-  font-weight: bold;
-}
-
-select, input, textarea {
-  width: 100%;
-  padding: 10px;
-  border: 1px solid #ddd;
-  border-radius: 4px;
-  font-size: 15px;
-}
-
-.booking-btn {
-  width: 100%;
-  padding: 12px;
-  background-color: #1976d2;
-  color: white;
-  border: none;
-  border-radius: 4px;
-  font-size: 16px;
-  cursor: pointer;
-  margin-top: 1rem;
-  transition: background-color 0.3s;
-}
-
-.booking-btn:hover:not(:disabled) {
-  background-color: #1565c0;
-}
-
-.booking-btn:disabled {
-  background-color: #cccccc;
-  cursor: not-allowed;
-}
-
-.login-tip {
-  text-align: center;
-  margin-top: 1rem;
-  color: #777;
-}
-
-.login-tip a {
-  color: #1976d2;
-  text-decoration: none;
-}
-
-.login-tip a:hover {
-  text-decoration: underline;
-}
-
-.loading {
-  text-align: center;
-  padding: 3rem;
-  color: #555;
-  font-size: 1.2rem;
-}
-
-@media (max-width: 768px) {
-  .content-container {
-    flex-direction: column;
-  }
-  
-  .booking-sidebar {
-    flex: auto;
-    width: 100%;
-  }
-  
-  .booking-card {
-    position: static;
-    margin-bottom: 2rem;
-  }
-  
-  .services-list {
-    grid-template-columns: 1fr;
-  }
-}
-</style> 
+</script> 

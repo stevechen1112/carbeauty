@@ -173,7 +173,7 @@
 
 <script>
 import { ref, onMounted } from 'vue';
-import { getAllAppointments } from '../../services/admin';
+import apiClient from '../../services/apiClient';
 import LoadingSpinner from '../../components/LoadingSpinner.vue';
 
 export default {
@@ -201,12 +201,13 @@ export default {
     const loadAppointments = async () => {
       try {
         loading.value = true;
-        const data = await getAllAppointments();
-        appointments.value = data;
+        const response = await apiClient.get('/admin/appointments');
+        appointments.value = response.data;
         filterAppointments();
         loading.value = false;
       } catch (err) {
-        error.value = err.message || '無法載入預約數據';
+        console.error('載入預約數據錯誤:', err);
+        error.value = err.response?.data?.message || '無法載入預約數據';
         loading.value = false;
       }
     };

@@ -99,7 +99,7 @@
 
 <script>
 import { ref, computed, onMounted } from 'vue';
-import { getAllUsers, updateUser } from '../../services/admin';
+import apiClient from '../../services/apiClient';
 import { getCurrentUser } from '../../services/auth';
 import LoadingSpinner from '../../components/LoadingSpinner.vue';
 
@@ -139,12 +139,13 @@ export default {
     const loadUsers = async () => {
       try {
         loading.value = true;
-        const data = await getAllUsers();
-        users.value = data;
+        const response = await apiClient.get('/admin/users');
+        users.value = response.data;
         filterUsers();
         loading.value = false;
       } catch (err) {
-        error.value = err.message || '無法載入用戶數據';
+        console.error('載入用戶數據錯誤:', err);
+        error.value = err.response?.data?.message || '無法載入用戶數據';
         loading.value = false;
       }
     };
@@ -197,12 +198,12 @@ export default {
           role: editingUser.value.role
         };
         
-        await updateUser(editingUser.value.id, updateData);
+        const response = await apiClient.put(`/admin/users/${editingUser.value.id}`, updateData);
         
         // 更新本地用戶列表
         const userIndex = users.value.findIndex(u => u.id === editingUser.value.id);
         if (userIndex !== -1) {
-          users.value[userIndex] = { ...users.value[userIndex], ...updateData };
+          users.value[userIndex] = { ...users.value[userIndex], ...response.data };
         }
         
         // 重新過濾用戶
@@ -212,7 +213,8 @@ export default {
         closeEditModal();
         saving.value = false;
       } catch (err) {
-        error.value = err.message || '無法更新用戶';
+        console.error('更新用戶錯誤:', err);
+        error.value = err.response?.data?.message || '無法更新用戶';
         saving.value = false;
       }
     };

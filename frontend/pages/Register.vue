@@ -1,373 +1,183 @@
 <template>
-  <div class="register-container">
-    <h1>註冊新帳號</h1>
-    <form @submit.prevent="handleSubmit" class="register-form">
-      <div class="form-group">
-        <label for="name">用戶名稱</label>
-        <input 
-          type="text" 
-          id="name" 
-          v-model="form.name" 
-          class="form-control" 
-          required
-          placeholder="請輸入您的姓名"
-        >
+  <div class="min-h-[calc(100vh-4rem)] flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
+    <div class="max-w-md w-full space-y-8">
+      <div>
+        <h2 class="mt-6 text-center text-3xl font-extrabold text-gray-900">
+          註冊新帳號
+        </h2>
+        <p class="mt-2 text-center text-sm text-gray-600">
+          或
+          <router-link to="/login" class="font-medium text-primary hover:text-primary-dark">
+            登入現有帳號
+          </router-link>
+        </p>
       </div>
-      
-      <div class="form-group">
-        <label for="phone">手機號碼</label>
-        <input 
-          type="tel" 
-          id="phone" 
-          v-model="form.phone" 
-          class="form-control" 
-          required
-          pattern="[0-9]{10}"
-          placeholder="請輸入您的手機號碼，例如: 0912345678"
-        >
-        <small>請輸入10位數字的手機號碼</small>
-      </div>
-      
-      <div class="form-group">
-        <label for="password">密碼</label>
-        <div class="password-input-container">
-          <input 
-            :type="showPassword ? 'text' : 'password'" 
-            id="password" 
-            v-model="form.password" 
-            class="form-control" 
+      <form class="mt-8 space-y-6" @submit.prevent="handleRegister">
+        <div class="rounded-md shadow-sm -space-y-px">
+          <div>
+            <label for="name" class="form-label">姓名</label>
+            <input
+              id="name"
+              v-model="name"
+              type="text"
+              required
+              class="input-field"
+              placeholder="請輸入您的姓名"
+            />
+          </div>
+          <div class="mt-4">
+            <label for="email" class="form-label">電子郵件</label>
+            <input
+              id="email"
+              v-model="email"
+              type="email"
+              required
+              class="input-field"
+              placeholder="請輸入電子郵件"
+            />
+          </div>
+          <div class="mt-4">
+            <label for="phone" class="form-label">手機號碼</label>
+            <input
+              id="phone"
+              v-model="phone"
+              type="tel"
+              required
+              pattern="[0-9]{10}"
+              class="input-field"
+              placeholder="請輸入手機號碼"
+            />
+          </div>
+          <div class="mt-4">
+            <label for="password" class="form-label">密碼</label>
+            <input
+              id="password"
+              v-model="password"
+              type="password"
+              required
+              class="input-field"
+              placeholder="請輸入密碼"
+            />
+          </div>
+          <div class="mt-4">
+            <label for="confirmPassword" class="form-label">確認密碼</label>
+            <input
+              id="confirmPassword"
+              v-model="confirmPassword"
+              type="password"
+              required
+              class="input-field"
+              placeholder="請再次輸入密碼"
+            />
+          </div>
+        </div>
+
+        <div class="flex items-center">
+          <input
+            id="terms"
+            v-model="acceptTerms"
+            type="checkbox"
             required
-            @input="checkPasswordStrength"
-            placeholder="請設定您的密碼"
+            class="h-4 w-4 text-primary focus:ring-primary border-gray-300 rounded"
+          />
+          <label for="terms" class="ml-2 block text-sm text-gray-900">
+            我同意
+            <a href="#" class="font-medium text-primary hover:text-primary-dark">
+              服務條款
+            </a>
+            和
+            <a href="#" class="font-medium text-primary hover:text-primary-dark">
+              隱私政策
+            </a>
+          </label>
+        </div>
+
+        <div>
+          <button
+            type="submit"
+            class="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-primary hover:bg-primary-dark focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary"
+            :disabled="loading"
           >
-          <button 
-            type="button"
-            class="toggle-password-btn"
-            @click="showPassword = !showPassword"
-          >
-            {{ showPassword ? '隱藏' : '顯示' }}
+            <span class="absolute left-0 inset-y-0 flex items-center pl-3">
+              <svg
+                class="h-5 w-5 text-primary group-hover:text-primary-dark"
+                xmlns="http://www.w3.org/2000/svg"
+                viewBox="0 0 20 20"
+                fill="currentColor"
+                aria-hidden="true"
+              >
+                <path
+                  fill-rule="evenodd"
+                  d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-8.707l-3-3a1 1 0 00-1.414 0l-3 3a1 1 0 001.414 1.414L9 9.414V13a1 1 0 102 0V9.414l1.293 1.293a1 1 0 001.414-1.414z"
+                  clip-rule="evenodd"
+                />
+              </svg>
+            </span>
+            {{ loading ? '註冊中...' : '註冊' }}
           </button>
         </div>
-        
-        <!-- 密碼強度指示器 -->
-        <div v-if="form.password" class="password-strength">
-          <div class="strength-meter">
-            <div 
-              class="strength-meter-fill" 
-              :style="{width: `${passwordStrength.score * 20}%`}"
-              :class="passwordStrength.level"
-            ></div>
-          </div>
-          <div class="strength-text" :class="passwordStrength.level">
-            密碼強度: {{ strengthLevelText }}
-          </div>
+
+        <div v-if="error" class="alert alert-error">
+          {{ error }}
         </div>
-        
-        <!-- 密碼提示 -->
-        <div v-if="passwordStrength.feedback.length" class="password-feedback">
-          <small>提升密碼安全性:</small>
-          <ul>
-            <li v-for="(tip, index) in passwordStrength.feedback" :key="index">
-              {{ tip }}
-            </li>
-          </ul>
-        </div>
-      </div>
-      
-      <div class="form-group">
-        <label for="confirmPassword">確認密碼</label>
-        <input 
-          type="password" 
-          id="confirmPassword" 
-          v-model="form.confirmPassword" 
-          class="form-control" 
-          required
-          placeholder="請再次輸入密碼"
-        >
-        <small v-if="passwordMismatch" class="error-text">兩次輸入的密碼不一致</small>
-      </div>
-      
-      <div class="form-actions">
-        <button type="submit" class="btn-register" :disabled="isLoading || passwordMismatch || (form.password && passwordStrength.level === 'weak')">
-          {{ isLoading ? '處理中...' : '註冊' }}
-        </button>
-        <div class="login-link">
-          已有帳號？<router-link to="/login">前往登入</router-link>
-        </div>
-      </div>
-      
-      <div v-if="error" class="error-message">
-        {{ error }}
-      </div>
-    </form>
+      </form>
+    </div>
   </div>
 </template>
 
 <script>
-import { ref, computed, reactive } from 'vue';
-import { useRouter } from 'vue-router';
-import { register, checkPasswordStrength } from '../services/auth';
+import { ref } from 'vue'
+import { useRouter } from 'vue-router'
+import { useAuthStore } from '../stores/auth'
 
 export default {
   name: 'Register',
   setup() {
-    const router = useRouter();
-    const isLoading = ref(false);
-    const error = ref('');
-    const showPassword = ref(false);
-    const passwordStrength = ref({ score: 0, level: '', feedback: [] });
-    
-    const form = reactive({
-      name: '',
-      phone: '',
-      password: '',
-      confirmPassword: ''
-    });
-    
-    const passwordMismatch = computed(() => {
-      return form.password && 
-             form.confirmPassword && 
-             form.password !== form.confirmPassword;
-    });
-    
-    const strengthLevelText = computed(() => {
-      switch(passwordStrength.value.level) {
-        case 'weak': return '弱';
-        case 'medium': return '中';
-        case 'strong': return '強';
-        default: return '';
+    const router = useRouter()
+    const authStore = useAuthStore()
+    const name = ref('')
+    const email = ref('')
+    const phone = ref('')
+    const password = ref('')
+    const confirmPassword = ref('')
+    const acceptTerms = ref(false)
+    const loading = ref(false)
+    const error = ref('')
+
+    const handleRegister = async () => {
+      if (password.value !== confirmPassword.value) {
+        error.value = '兩次輸入的密碼不一致'
+        return
       }
-    });
-    
-    const checkPasswordStrength = () => {
-      if (form.password) {
-        passwordStrength.value = checkPasswordStrength(form.password);
-      } else {
-        passwordStrength.value = { score: 0, level: '', feedback: [] };
-      }
-    };
-    
-    const handleSubmit = async () => {
+
       try {
-        if (passwordMismatch.value) {
-          error.value = '兩次輸入的密碼不一致';
-          return;
-        }
-        
-        isLoading.value = true;
-        error.value = '';
-        
-        // 檢查密碼強度
-        const strengthCheck = checkPasswordStrength(form.password);
-        if (strengthCheck.level === 'weak') {
-          error.value = '密碼強度不足，請參考提示進行修改';
-          isLoading.value = false;
-          return;
-        }
-        
-        const response = await register({
-          name: form.name,
-          phone: form.phone,
-          password: form.password
-        });
-        
-        // 檢查是否因密碼強度問題而返回的錯誤
-        if (response && !response.success && response.feedback) {
-          error.value = response.message;
-          passwordStrength.value.feedback = response.feedback;
-          isLoading.value = false;
-          return;
-        }
-        
-        // 註冊成功，重定向到登入頁
-        router.push({ 
-          path: '/login', 
-          query: { registered: 'success' } 
-        });
+        loading.value = true
+        error.value = ''
+        await authStore.register({
+          name: name.value,
+          email: email.value,
+          phone: phone.value,
+          password: password.value
+        })
+        router.push({ path: '/login', query: { registered: 'success' } })
       } catch (err) {
-        error.value = err.message || '註冊失敗，請稍後再試';
+        error.value = err.message || '註冊失敗，請稍後再試'
       } finally {
-        isLoading.value = false;
+        loading.value = false
       }
-    };
-    
+    }
+
     return {
-      form,
-      isLoading,
+      name,
+      email,
+      phone,
+      password,
+      confirmPassword,
+      acceptTerms,
+      loading,
       error,
-      handleSubmit,
-      passwordMismatch,
-      showPassword,
-      passwordStrength,
-      strengthLevelText,
-      checkPasswordStrength
-    };
+      handleRegister
+    }
   }
-};
-</script>
-
-<style scoped>
-.register-container {
-  max-width: 400px;
-  margin: 40px auto;
-  padding: 20px;
-  border-radius: 8px;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-  background-color: #fff;
 }
-
-h2 {
-  text-align: center;
-  margin-bottom: 20px;
-  color: #2c3e50;
-}
-
-.form-group {
-  margin-bottom: 15px;
-}
-
-label {
-  display: block;
-  margin-bottom: 5px;
-  font-weight: bold;
-}
-
-input {
-  width: 100%;
-  padding: 10px;
-  border: 1px solid #ddd;
-  border-radius: 4px;
-  font-size: 16px;
-}
-
-.error-message {
-  color: #f44336;
-  font-size: 14px;
-  margin-top: 5px;
-}
-
-.btn-register {
-  width: 100%;
-  padding: 12px;
-  background-color: #1976d2;
-  color: white;
-  border: none;
-  border-radius: 4px;
-  font-size: 16px;
-  cursor: pointer;
-  margin-top: 10px;
-}
-
-.btn-register:hover {
-  background-color: #1565c0;
-}
-
-.btn-register:disabled {
-  background-color: #cccccc;
-  cursor: not-allowed;
-}
-
-.login-link {
-  text-align: center;
-  margin-top: 15px;
-}
-
-a {
-  color: #1976d2;
-  text-decoration: none;
-}
-
-a:hover {
-  text-decoration: underline;
-}
-
-.password-input-container {
-  position: relative;
-  display: flex;
-}
-
-.password-input-container input {
-  flex: 1;
-}
-
-.toggle-password-btn {
-  position: absolute;
-  right: 10px;
-  top: 50%;
-  transform: translateY(-50%);
-  background: none;
-  border: none;
-  color: #666;
-  cursor: pointer;
-  font-size: 0.8rem;
-}
-
-.password-strength {
-  margin-top: 10px;
-}
-
-.strength-meter {
-  height: 5px;
-  background-color: #e0e0e0;
-  border-radius: 3px;
-  overflow: hidden;
-  margin-bottom: 5px;
-}
-
-.strength-meter-fill {
-  height: 100%;
-  border-radius: 3px;
-  transition: width 0.3s ease;
-}
-
-.strength-meter-fill.weak {
-  background-color: #ff5252;
-}
-
-.strength-meter-fill.medium {
-  background-color: #ffc107;
-}
-
-.strength-meter-fill.strong {
-  background-color: #4caf50;
-}
-
-.strength-text {
-  font-size: 0.8rem;
-  text-align: right;
-}
-
-.strength-text.weak {
-  color: #ff5252;
-}
-
-.strength-text.medium {
-  color: #ffc107;
-}
-
-.strength-text.strong {
-  color: #4caf50;
-}
-
-.password-feedback {
-  margin-top: 10px;
-  font-size: 0.8rem;
-  color: #666;
-}
-
-.password-feedback ul {
-  margin: 5px 0 0 0;
-  padding-left: 20px;
-}
-
-.password-feedback li {
-  margin-bottom: 2px;
-}
-
-.error-text {
-  color: #ff5252;
-  font-size: 0.8rem;
-  margin-top: 5px;
-  display: block;
-}
-</style> 
+</script> 

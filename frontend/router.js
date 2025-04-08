@@ -11,6 +11,7 @@ const NearbyShops = () => import('./pages/NearbyShops.vue');
 const Community = () => import('./pages/Community.vue');
 const MyAppointments = () => import('./pages/MyAppointments.vue');
 const UserProfile = () => import('./pages/UserProfile.vue');
+const BookingSuccess = () => import('./pages/BookingSuccess.vue');
 
 // 簡易404頁面組件
 const NotFound = {
@@ -104,6 +105,12 @@ const routes = [
     path: '/profile',
     name: 'UserProfile',
     component: UserProfile,
+    beforeEnter: requireAuth
+  },
+  {
+    path: '/booking/success',
+    name: 'BookingSuccess',
+    component: BookingSuccess,
     beforeEnter: requireAuth
   },
   {

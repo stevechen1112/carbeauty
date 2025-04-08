@@ -287,318 +287,175 @@
 </template>
 
 <script>
-import { getUserAppointments, cancelAppointment } from '../services/appointments';
-import { getFavoriteProviders, removeFavoriteProvider } from '../services/providers';
+import { ref, computed, onMounted } from 'vue';
+import { useRouter } from 'vue-router';
+import { getCurrentUser } from '../services/auth';
+import apiClient from '../services/apiClient';
 
 export default {
   name: 'UserProfile',
-  data() {
-    return {
-      activeTab: 'info',
-      user: {
-        name: '測試用戶',
-        phone: '0912345678',
-        email: '',
-        address: ''
-      },
-      appointments: [],
-      historicalAppointments: [],
-      favorites: [],
-      userPosts: [],
-      userCars: [],
-      showAddCarModal: false,
-      isEditingCar: false,
-      editingCarId: null,
-      carForm: {
-        brand: '',
-        model: '',
-        licensePlate: '',
-        year: '',
-        color: '',
-        notes: '',
-        image: null
+  setup() {
+    const router = useRouter();
+    const activeTab = ref('info');
+    const user = ref({
+      name: '',
+      phone: '',
+      email: '',
+      address: ''
+    });
+    const appointments = ref([]);
+    const historicalAppointments = ref([]);
+    const favorites = ref([]);
+    const userPosts = ref([]);
+    const userCars = ref([]);
+    const isLoading = ref(true);
+    const error = ref('');
+    const showAddCarModal = ref(false);
+    const isEditingCar = ref(false);
+    const currentCarId = ref(null);
+    const carForm = ref({
+      brand: '',
+      model: '',
+      licensePlate: '',
+      year: new Date().getFullYear(),
+      color: '',
+      notes: '',
+      image: ''
+    });
+
+    // 獲取用戶收藏的服務商
+    const loadFavoriteProviders = async () => {
+      try {
+        const response = await apiClient.get('/users/favorites');
+        favorites.value = response;
+      } catch (err) {
+        console.error('獲取收藏商家錯誤:', err);
+        error.value = '無法載入收藏的商家';
       }
     };
-  },
-  computed: {
-    isCarFormValid() {
-      return this.carForm.brand && this.carForm.model && this.carForm.licensePlate && this.carForm.year && this.carForm.color;
-    }
-  },
-  methods: {
-    async fetchUserInfo() {
+
+    // 獲取用戶的預約
+    const loadAppointments = async () => {
       try {
-        // 實際應用中應從API獲取用戶資料
-        // const response = await fetch('/api/user', { headers: getAuthHeader() });
-        // this.user = await response.json();
-      } catch (error) {
-        console.error('獲取用戶資料錯誤:', error);
+        const response = await apiClient.get('/appointments/user');
+        
+        // 將預約分為進行中和歷史預約
+        appointments.value = response.filter(a => 
+          a.status === 'pending' || a.status === 'confirmed'
+        );
+        
+        historicalAppointments.value = response.filter(a => 
+          a.status === 'completed' || a.status === 'cancelled'
+        );
+      } catch (err) {
+        console.error('獲取預約錯誤:', err);
+        error.value = '無法載入預約記錄';
       }
-    },
-    async fetchAppointments() {
+    };
+
+    // 獲取用戶的發文
+    const loadUserPosts = async () => {
       try {
-        // 在實際應用中，應該從API獲取預約
-        // const appointments = await getUserAppointments();
-        
-        // 模擬數據
-        this.appointments = [
-          {
-            id: 1,
-            provider_id: 1,
-            provider_name: '頂級汽車美容中心',
-            service_id: 2,
-            service_name: '外部打蠟',
-            date: '2023-04-15',
-            time_slot: '14:00-16:00',
-            price: 2000,
-            status: 'confirmed'
-          },
-          {
-            id: 2,
-            provider_id: 3,
-            provider_name: '閃亮汽車美容工作室',
-            service_id: 1,
-            service_name: '基礎洗車',
-            date: '2023-04-20',
-            time_slot: '10:00-11:00',
-            price: 600,
-            status: 'pending'
-          }
-        ];
-        
-        this.historicalAppointments = [
-          {
-            id: 3,
-            provider_id: 2,
-            provider_name: '豪華車專業洗車',
-            service_id: 3,
-            service_name: '內部深層清潔',
-            date: '2023-03-10',
-            time_slot: '13:00-15:00',
-            price: 1800,
-            status: 'completed',
-            hasReview: true
-          },
-          {
-            id: 4,
-            provider_id: 1,
-            provider_name: '頂級汽車美容中心',
-            service_id: 4,
-            service_name: '全車護理套餐',
-            date: '2023-02-25',
-            time_slot: '09:00-12:00',
-            price: 3500,
-            status: 'completed',
-            hasReview: false
-          }
-        ];
-      } catch (error) {
-        console.error('獲取預約錯誤:', error);
+        const response = await apiClient.get('/posts/user');
+        userPosts.value = response;
+      } catch (err) {
+        console.error('獲取用戶發文錯誤:', err);
+        error.value = '無法載入發文記錄';
       }
-    },
-    async fetchFavorites() {
+    };
+
+    // 獲取用戶的愛車資訊
+    const loadUserCars = async () => {
       try {
-        // 實際應用中應從API獲取收藏商家
-        // const favorites = await getFavoriteProviders();
-        
-        // 模擬數據
-        this.favorites = [
-          {
-            id: 1,
-            name: '頂級汽車美容中心',
-            address: '台北市信義區松高路123號',
-            rating: 4.8,
-            review_count: 142
-          },
-          {
-            id: 3,
-            name: '閃亮汽車美容工作室',
-            address: '台北市中山區南京東路789號',
-            rating: 4.7,
-            review_count: 89
-          }
-        ];
-      } catch (error) {
-        console.error('獲取收藏商家錯誤:', error);
+        const response = await apiClient.get('/users/cars');
+        userCars.value = response;
+      } catch (err) {
+        console.error('獲取愛車資訊錯誤:', err);
+        error.value = '無法載入愛車資訊';
       }
-    },
-    async fetchUserPosts() {
+    };
+
+    // 載入用戶全部數據
+    const loadUserData = async () => {
       try {
-        // 實際應用中應從API獲取用戶發文
-        // const posts = await getUserPosts();
+        isLoading.value = true;
+        error.value = '';
         
-        // 模擬數據
-        this.userPosts = [
-          {
-            id: 1,
-            title: '新車到手，分享我的保養心得',
-            content: '前兩週剛入手新車，已經去做了基礎美容和鍍膜，效果非常好！推薦大家嘗試...',
-            createdAt: new Date('2023-03-15T10:30:00'),
-            likes: 24,
-            comments: 8
-          },
-          {
-            id: 2,
-            title: '分享我的愛車日常打理方法',
-            content: '每週固定會自己動手清潔愛車，分享一些小技巧給大家...',
-            createdAt: new Date('2023-03-10T14:20:00'),
-            likes: 36,
-            comments: 15
-          }
-        ];
-      } catch (error) {
-        console.error('獲取用戶發文錯誤:', error);
+        // 獲取當前用戶信息
+        const currentUser = getCurrentUser();
+        if (currentUser) {
+          user.value = {
+            ...user.value,
+            ...currentUser
+          };
+          
+          // 載入所有用戶數據
+          await Promise.all([
+            loadFavoriteProviders(),
+            loadAppointments(),
+            loadUserPosts(),
+            loadUserCars()
+          ]);
+        } else {
+          // 未登入的情況
+          router.push('/login');
+        }
+      } catch (err) {
+        console.error('載入用戶數據錯誤:', err);
+        error.value = '載入數據時發生錯誤';
+      } finally {
+        isLoading.value = false;
       }
-    },
-    async fetchUserCars() {
+    };
+
+    // 更新用戶信息
+    const updateUserInfo = async () => {
       try {
-        // 實際應用中應從API獲取用戶車輛信息
-        // const cars = await getUserCars();
-        
-        // 模擬數據
-        this.userCars = [
-          {
-            id: 1,
-            brand: 'Toyota',
-            model: 'Camry',
-            licensePlate: 'ABC-1234',
-            year: 2020,
-            color: '白色',
-            notes: '主要代步車',
-            image: 'https://via.placeholder.com/300x200?text=Toyota+Camry'
-          },
-          {
-            id: 2,
-            brand: 'BMW',
-            model: '5系列',
-            licensePlate: 'XYZ-5678',
-            year: 2022,
-            color: '黑色',
-            notes: '週末休閒',
-            image: 'https://via.placeholder.com/300x200?text=BMW+5系列'
-          }
-        ];
-      } catch (error) {
-        console.error('獲取用戶車輛信息錯誤:', error);
+        isLoading.value = true;
+        await apiClient.put('/users/profile', user.value);
+        // 更新本地存儲的用戶信息
+        const currentUser = getCurrentUser();
+        if (currentUser) {
+          localStorage.setItem('user', JSON.stringify({
+            ...currentUser,
+            ...user.value
+          }));
+        }
+        alert('資料已更新');
+        isLoading.value = false;
+      } catch (err) {
+        console.error('更新用戶信息錯誤:', err);
+        error.value = '更新資料失敗';
+        isLoading.value = false;
       }
-    },
-    updateUserInfo() {
-      // 更新用戶資料
-      alert('資料已更新！');
-    },
-    async cancelAppointment(appointmentId) {
+    };
+
+    // 取消收藏商家
+    const removeFavorite = async (providerId) => {
       try {
-        // 在實際應用中，應該調用API取消預約
-        // await cancelAppointment(appointmentId);
-        
-        // 更新本地數據
-        this.appointments = this.appointments.filter(a => a.id !== appointmentId);
-        alert('預約已取消');
-      } catch (error) {
-        console.error('取消預約錯誤:', error);
+        await apiClient.delete(`/users/favorites/${providerId}`);
+        favorites.value = favorites.value.filter(f => f.id !== providerId);
+      } catch (err) {
+        console.error('取消收藏錯誤:', err);
+        error.value = '取消收藏失敗';
       }
-    },
-    rescheduleAppointment(appointmentId) {
-      // 重新安排預約時間
-      alert('此功能尚未實現');
-    },
-    leaveReview(appointment) {
-      // 跳轉到評價頁面或顯示評價表單
-      alert(`為 ${appointment.provider_name} 的 ${appointment.service_name} 服務進行評價`);
-    },
-    rebookService(providerId, serviceId) {
-      // 跳轉到預約頁面
-      this.$router.push(`/providers/${providerId}?service=${serviceId}`);
-    },
-    removeFavorite(providerId) {
-      // 在實際應用中應發送請求取消收藏
-      this.favorites = this.favorites.filter(f => f.id !== providerId);
-      alert('已取消收藏');
-    },
-    formatTime(date) {
-      // 簡單的時間格式化
-      return new Date(date).toLocaleDateString('zh-TW');
-    },
-    viewPost(postId) {
-      // 查看帖子詳情
-      this.$router.push(`/community/posts/${postId}`);
-    },
-    editPost(postId) {
-      // 編輯帖子
-      alert(`編輯帖子 ID: ${postId}`);
-    },
-    deletePost(postId) {
-      // 刪除帖子
-      if (confirm('確定要刪除此帖子嗎？')) {
-        this.userPosts = this.userPosts.filter(p => p.id !== postId);
-        alert('帖子已刪除');
+    };
+
+    // 取消預約
+    const cancelAppointment = async (appointmentId) => {
+      if (confirm('確定要取消此預約嗎？')) {
+        try {
+          await apiClient.delete(`/appointments/${appointmentId}`);
+          await loadAppointments(); // 重新載入預約數據
+        } catch (err) {
+          console.error('取消預約錯誤:', err);
+          error.value = '取消預約失敗';
+        }
       }
-    },
-    editCar(carId) {
-      // 編輯車輛信息
-      const car = this.userCars.find(c => c.id === carId);
-      if (car) {
-        this.carForm = { ...car };
-        this.isEditingCar = true;
-        this.editingCarId = carId;
-        this.showAddCarModal = true;
-      }
-    },
-    deleteCar(carId) {
-      // 刪除車輛信息
-      if (confirm('確定要刪除此車輛資訊嗎？')) {
-        this.userCars = this.userCars.filter(c => c.id !== carId);
-        alert('車輛資訊已刪除');
-      }
-    },
-    closeCarModal() {
-      // 關閉車輛資訊彈窗
-      this.showAddCarModal = false;
-      this.isEditingCar = false;
-      this.editingCarId = null;
-      this.carForm = {
-        brand: '',
-        model: '',
-        licensePlate: '',
-        year: '',
-        color: '',
-        notes: '',
-        image: null
-      };
-    },
-    saveCar() {
-      if (this.isEditingCar) {
-        // 更新現有車輛資訊
-        this.userCars = this.userCars.map(car => {
-          if (car.id === this.editingCarId) {
-            return { ...this.carForm, id: this.editingCarId };
-          }
-          return car;
-        });
-        alert('車輛資訊已更新');
-      } else {
-        // 添加新的車輛資訊
-        const newCar = {
-          ...this.carForm,
-          id: Date.now() // 簡單生成唯一ID
-        };
-        this.userCars.push(newCar);
-        alert('車輛資訊已添加');
-      }
-      this.closeCarModal();
-    },
-    handleImageUpload(event) {
-      const file = event.target.files[0];
-      if (file) {
-        // 實際應用中，應上傳圖片到伺服器並獲取URL
-        // 這裡簡單地使用本地URL預覽
-        this.carForm.image = URL.createObjectURL(file);
-      }
-    },
-    formatDateTime(date, timeSlot) {
-      return `${date} ${timeSlot}`;
-    },
-    getStatusText(status) {
+    };
+
+    // 獲取狀態文字
+    const getStatusText = (status) => {
       const statusMap = {
         'pending': '待確認',
         'confirmed': '已確認',
@@ -606,17 +463,52 @@ export default {
         'cancelled': '已取消'
       };
       return statusMap[status] || status;
-    },
-    getStatusClass(status) {
+    };
+
+    // 獲取狀態CSS類
+    const getStatusClass = (status) => {
       return `status-${status}`;
-    }
-  },
-  created() {
-    this.fetchUserInfo();
-    this.fetchAppointments();
-    this.fetchFavorites();
-    this.fetchUserPosts();
-    this.fetchUserCars();
+    };
+
+    // 格式化日期時間
+    const formatDateTime = (date, timeSlot) => {
+      if (!date) return '';
+      const formattedDate = new Date(date).toLocaleDateString('zh-TW');
+      return `${formattedDate} ${timeSlot || ''}`;
+    };
+
+    // 格式化時間
+    const formatTime = (timestamp) => {
+      if (!timestamp) return '';
+      return new Date(timestamp).toLocaleDateString('zh-TW');
+    };
+
+    // 在組件掛載時加載數據
+    onMounted(() => {
+      loadUserData();
+    });
+
+    return {
+      activeTab,
+      user,
+      appointments,
+      historicalAppointments,
+      favorites,
+      userPosts,
+      userCars,
+      isLoading,
+      error,
+      showAddCarModal,
+      isEditingCar,
+      carForm,
+      updateUserInfo,
+      removeFavorite,
+      cancelAppointment,
+      getStatusText,
+      getStatusClass,
+      formatDateTime,
+      formatTime
+    };
   }
 };
 </script>

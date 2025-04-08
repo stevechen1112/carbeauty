@@ -30,17 +30,9 @@
             <span class="icon">📅</span>
             <span class="label">預約管理</span>
           </router-link>
-          <router-link to="/admin/services" class="nav-item">
-            <span class="icon">🛠️</span>
-            <span class="label">服務管理</span>
-          </router-link>
           <router-link to="/admin/seo" class="nav-item">
             <span class="icon">🔍</span>
             <span class="label">SEO 管理</span>
-          </router-link>
-          <router-link to="/admin/settings" class="nav-item">
-            <span class="icon">⚙️</span>
-            <span class="label">系統設置</span>
           </router-link>
           <div class="nav-divider"></div>
           <router-link to="/" class="nav-item">
@@ -60,7 +52,7 @@
 <script>
 import { ref, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
-import { getCurrentUser, logout as authLogout } from '../../services/auth';
+import { getCurrentUser, logout as authLogout, isAdmin } from '../../services/auth';
 
 export default {
   name: 'AdminLayout',
@@ -68,15 +60,29 @@ export default {
     const router = useRouter();
     const currentUser = ref(null);
     
-    onMounted(() => {
+    // 檢查用戶是否為管理員的函數
+    const checkIsAdmin = () => {
       currentUser.value = getCurrentUser();
-      
-      // 檢查用戶是否為管理員
-      if (!currentUser.value || currentUser.value.role !== 'admin') {
+      if (!currentUser.value || !isAdmin()) {
+        console.error('非管理員用戶，重定向到登入頁面');
         router.push('/login');
+        return false;
       }
+      return true;
+    };
+    
+    onMounted(() => {
+      if (!checkIsAdmin()) return;
+      
+      // 監聽本地存儲變化，自動更新用戶狀態
+      window.addEventListener('storage', (event) => {
+        if (event.key === 'auth_token' || event.key === 'user') {
+          checkIsAdmin();
+        }
+      });
     });
     
+    // 登出函數
     const logout = () => {
       authLogout();
       router.push('/login');
